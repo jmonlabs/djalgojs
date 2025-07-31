@@ -1,0 +1,302 @@
+# %% [markdown]
+# # 2. Harmonies
+#
+# This section will help you get started with Djalgo and JavaScript music programming.
+
+# %% [markdown]
+# ## 2.1 JavaScript basics
+#
+# ### 2.1.1 Arrays in First Class
+#
+# Djalgo uses basic JavaScript objects such as arrays and objects. JavaScript arrays won't produce music directly, but they become powerful after processing them through Web Audio APIs or MIDI processors. The content of a JavaScript array is defined in square brackets, and each item is separated with a comma. In the next code cell, I assign an array to a variable.
+
+# %% [esm]
+import {dj, viz} from "https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js?v=1"
+globalThis.dj = dj;
+globalThis.viz = viz;
+
+# %% [javascript]
+const a = [1, "a", 10, "crocodile"];
+console.log(a);
+
+# %% [markdown]
+# ### 2.1.2 Music as a signal of information
+#
+# Rather than sounds, Djalgo generates numerical values and objects representing notes. A note, at its most essential information, is a combination of a pitch, a duration, and when it starts in time. Djalgo considers a note as an object with properties `{pitch, duration, time}` or as a tuple `[pitch, duration, time]`. Pitches are expressed in MIDI notation, a highly standardized way for music encoding, which spans from 0, corresponding to C-1 (8.178 Hz), to 127, corresponding to G9 (12543.854 Hz). Durations, as well as times (start times), are typically expressed in quarter lengths. A quarter length is the duration of a metronome tick. The metronome tick oscillates in beats per minute, a speed that allows quarter lengths to be placed in time.
+#
+# In JavaScript, the object `{pitch: 72, duration: 2.0, time: 1.0}` defines a note with pitch C5 with a duration of two quarter lengths starting at 1.0 quarter length from the beginning of the track. Pitches defined by `null` or `undefined` are rests.
+#
+# A rhythm is simply a note without the pitch. It can be defined with an object like `{duration, time}`. Speaking of definitions, a track is a sequence of notes stored in an array. And multiple tracks form a piece, which becomes an object with named tracks or an array of arrays.
+#
+# Let's define two tracks for "Twinkle, Twinkle, Little Star".
+
+# %% [javascript]
+const twinkle_1 = [
+  {pitch: 60, duration: 1.0, time: 0.0},  // C (twin)
+  {pitch: 60, duration: 1.0, time: 1.0},  // C (kle)
+  {pitch: 67, duration: 1.0, time: 2.0},  // G (twin)
+  {pitch: 67, duration: 1.0, time: 3.0},  // G (kle)
+  {pitch: 69, duration: 1.0, time: 4.0},  // A (lit)
+  {pitch: 69, duration: 1.0, time: 5.0},  // A (tle)
+  {pitch: 67, duration: 2.0, time: 6.0},  // G (star)
+];
+
+const twinkle_2 = [
+  {pitch: 65, duration: 1.0, time: 8.0},   // F (how)
+  {pitch: 65, duration: 1.0, time: 9.0},   // F (I)
+  {pitch: 64, duration: 1.0, time: 10.0},  // E (won)
+  {pitch: 64, duration: 1.0, time: 11.0},  // E (der)
+  {pitch: 62, duration: 1.0, time: 12.0},  // D (what)
+  {pitch: 62, duration: 1.0, time: 13.0},  // D (you)
+  {pitch: 60, duration: 2.0, time: 14.0},  // C (are)
+];
+
+console.log('First part:', twinkle_1);
+console.log('Second part:', twinkle_2);
+
+# %% [markdown]
+# To merge two arrays *horizontally*, i.e. in the time direction, you can use the spread operator `...` or the `concat()` method.
+
+# %% [javascript]
+// Merge arrays horizontally (concatenation)
+const twinkle_combined = [...twinkle_1, ...twinkle_2];
+console.log('Combined melody:', twinkle_combined);
+
+# %% [markdown]
+# Stack them *vertically* creates a piece with two tracks.
+
+# %% [javascript]
+// Stack as separate tracks (vertical arrangement)
+const twinkle_piece_array = [twinkle_1, twinkle_2];
+console.log('Piece as array:', twinkle_piece_array);
+
+# %% [markdown]
+# Although Djalgo accepts pieces defined as arrays of arrays, it is recommended to define them as JavaScript objects so that tracks can be named.
+
+# %% [javascript]
+const twinkle_piece = {
+  'melody_1': twinkle_1,
+  'melody_2': twinkle_2
+};
+console.log('Piece as named object:', twinkle_piece);
+
+# %% [markdown]
+# ## 2.2 Leverage Djalgo for music composition
+#
+# ### 2.2.1 Scales
+#
+# We haven't used Djalgo's advanced features yet. We just worked with basic JavaScript where I wrote the song *Twinkle, Twinkle Little Star* in C-major. C-major is a scale, i.e. a subset of the chromatic scale (all pitches) designed to fit together harmonically. Djalgo can generate pitch lists for any given scale. We've already loaded Djalgo in our session to access its functionalities, using the alias `dj` to make the code shorter.
+
+# %% [markdown]
+# Scales are accessible from the main dj object. You have to define the tonic and the type, then `.generate()` will process the scale, returning all available MIDI pitches in the scale. The `object.method()` way of programming (object-oriented programming) is like defining a musical scale and telling it to generate its pitches:
+#
+# ```javascript
+# const scale = new dj.Scale('C', 'major');
+# const pitches = scale.generate();
+# ```
+#
+# In the following code block, I create a Scale object, define it, then tell it to generate the scale.
+
+# %% [javascript]
+const c_major_scale = new dj.Scale('C', 'major');
+const c_major = c_major_scale.generate();
+console.log('C major scale pitches:', c_major);
+
+# %% [markdown]
+# Scales are defined as intervals from the chromatic scale. You might have heard that a major scale is *whole-step, whole-step, half-step, whole-step, whole-step, whole-step, half-step*. In JavaScript, from an array of 12 pitches in the chromatic scale, you would take the first pitch (index 0), the third (index 2), and so on. Djalgo predefines the major scale, the minor, diminished, pentatonic and many others.
+
+# %% [javascript]
+// Show available scale types and their intervals
+console.log('Available scale types:', dj.MusicTheoryConstants.scaleIntervals);
+
+# %% [markdown]
+# As any array, you can extract a subset by index. In JavaScript, `c_major.slice(35, 43)` means you aim at extracting index 35 to *excluding* index 43, i.e. indexes 35 to 42. The resulting array represents C4 to B4.
+
+# %% [javascript]
+const c_major_octave = c_major.slice(35, 43); // C4 to B4
+console.log('C major scale (C4 to B4):', c_major_octave);
+
+# %% [markdown]
+# To convert an array of pitches to the Djalgo note format, we can use JavaScript array methods. The explanations are in code comments, which are placed after the `//` symbols.
+
+# %% [javascript]
+// Convert pitches to Djalgo note objects
+const c_major_notes = c_major_octave.map((pitch, index) => ({
+  pitch: pitch,
+  duration: 1.0,        // Each note lasts 1 quarter length
+  time: index * 1.0     // Notes start at 0, 1, 2, 3, etc.
+}));
+
+console.log('C major scale as note objects:', c_major_notes);
+
+# %% [markdown]
+# ### 2.2.2 Progressions
+#
+# Chord progressions are sequences of chords that form the harmonic foundation of music. Djalgo provides tools to generate common chord progressions based on music theory.
+
+# %% [javascript]
+// Create a chord progression in C major
+const progression = new dj.Progression('C', 'major');
+const chords = progression.generate({ length: 4 }); // Generate 4 chords
+
+console.log('Chord progression:', chords);
+
+# %% [markdown]
+# ### 2.2.3 Voice Leading
+#
+# Voice leading refers to how individual voices (parts) in a musical texture move from chord to chord. Djalgo can help create smooth voice leading between chords.
+
+# %% [javascript]
+// Create voices with smooth voice leading
+const voice = new dj.Voice();
+
+// Convert chord progression to individual voice parts
+const voices = voice.fourPartHarmony(chords, {
+  voicing: 'close',
+  doubling: 'root'
+});
+
+console.log('Four-part harmony voices:', voices);
+
+# %% [markdown]
+# ### 2.2.4 Ornaments and Embellishments
+#
+# Musical ornaments add decorative elements to melodies. Djalgo provides various ornament types that can be applied to existing melodies.
+
+# %% [javascript]
+// Apply ornaments to our twinkle melody
+const ornament = new dj.Ornament();
+
+// Add a trill to the first note
+const ornamentedMelody = ornament.trill(twinkle_1[0], {
+  interval: 1,        // Trill with the next scale degree
+  duration: 0.25,     // Each trill note lasts 1/4 beat
+  repetitions: 4      // 4 alternations
+});
+
+console.log('Ornamented first note:', ornamentedMelody);
+
+# %% [markdown]
+# ## 2.3 Advanced Harmony Features
+#
+# ### 2.3.1 Scale Analysis
+#
+# Djalgo can analyze existing melodies to determine what scales they might belong to, and suggest appropriate harmonizations.
+
+# %% [javascript]
+// Analyze the twinkle melody
+const analysis = dj.MusicalAnalysis.analyzeScale(twinkle_combined);
+console.log('Scale analysis of Twinkle melody:', analysis);
+
+# %% [markdown]
+# ### 2.3.2 Chord Substitutions
+#
+# Advanced harmony often involves substituting chords with others that have similar functions but different colors.
+
+# %% [javascript]
+// Generate chord substitutions
+const substitutions = progression.getSubstitutions(chords[0]);
+console.log('Possible substitutions for', chords[0], ':', substitutions);
+
+# %% [markdown]
+# ### 2.3.3 Modal Harmony
+#
+# Modes provide different flavors of scales beyond major and minor. Each mode has its own characteristic sound and harmonic possibilities.
+
+# %% [javascript]
+// Create different modes of C
+const modes = ['ionian', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'aeolian', 'locrian'];
+
+modes.forEach(mode => {
+  const modalScale = new dj.Scale('C', mode);
+  const modalPitches = modalScale.generate(4, 8); // 4th octave, 8 notes
+  console.log(`C ${mode}:`, modalPitches);
+});
+
+# %% [markdown]
+# This concludes our exploration of harmony in Djalgo. You've learned how to:
+# - Work with scales and generate pitch collections
+# - Create chord progressions and analyze harmonic movement  
+# - Apply voice leading principles for smooth part writing
+# - Add ornaments and embellishments to melodies
+# - Analyze existing music and explore modal harmony
+#
+# These tools provide a solid foundation for creating rich harmonic content in your algorithmic compositions.
+
+# %% [markdown]
+# <div class="main-container">
+#     <div class="nav-container">
+#         <a href="#" class="nav-link">← previous</a>
+#         <div class="title">Djalgo's User Guide</div>
+#         <a href="#" class="nav-link">next →</a>
+#     </div>
+#     <div class="toc-container">
+#         <ul>
+#             <li><a href="#">01. Getting Started</a></li>
+#             <li><a href="#" class="active">> 02. Harmonies</a></li>
+#             <li><a href="#">03. Loops</a></li>
+#             <li><a href="#">04. Minimalism</a></li>
+#             <li><a href="#">05. Walks</a></li>
+#             <li><a href="#">06. Fractals</a></li>
+#             <li><a href="#">07. Genetic algorithms</a></li>
+#         </ul>
+#     </div>
+#     <div class="copyright-container">© Essi Parent 2024</div>
+# </div>
+
+# %% [html]
+<style>
+    .main-container {
+        background-color: #fff;
+        overflow: hidden;
+        width: 100%;
+        margin: 0 auto;
+    }
+    .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+    }
+    .copyright-container {
+        font-size: 12px;
+        display: flex;
+        justify-content: flex-end;
+        text-align: right;
+        padding: 15px 20px;
+    }
+    .nav-link {
+        text-decoration: none;
+        color: #333;
+        font-weight: bold;
+    }
+    .title {
+        font-size: 18px;
+        font-weight: bold;
+        text-align: center;
+        flex-grow: 1;
+        margin: 0 20px;
+    }
+    .toc-container {
+        padding: 15px 20px;
+        border-top: 1px solid #ccc;
+    }
+    .toc-container ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    .toc-container li {
+        margin-bottom: 8px;
+    }
+    .toc-container a {
+        text-decoration: none;
+        color: #555;
+    }
+    .toc-container a:hover {
+        text-decoration: underline;
+    }
+    .toc-container a.active {
+        color: #333;
+        font-weight: bold;
+    }
+</style>

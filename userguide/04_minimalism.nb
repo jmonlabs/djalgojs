@@ -1,0 +1,390 @@
+# %% [markdown]
+# 4. Minimalism
+
+# %% [markdown]
+The Djalgo package includes well-known minimalistic mathematical operations on notes to create no less rich musical scores. We will cover and merge two kinds of minimalistic operations: deterministic, where the outputs are consistently determined by the inputs, and stochastic, where we induce randomness. Of course, deterministic composition can be mixed with randomness. We would then refer to generative composition. In this section, I explain how to compose minimalistic, but powerful music with Djalgo.
+
+# %% [esm]
+import {dj, viz} from "https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js?v=1"
+globalThis.dj = dj;
+globalThis.viz = viz;
+
+# %% [markdown]
+## Isorhythms
+
+The isorhythm consists of mapping durations to pitches. The process can be done by combining arrays of pitches and rhythms, but specialized isorhythm functions keep the sequence running as long as needed until the end of pitches and durations coincide, then the offsets are adjusted to durations.
+
+# %% [markdown]
+### Example
+
+# %% [javascript]
+// Create a C major scale for our isorhythm example
+const pitches_cmajor = new dj.Scale('C', 'major').generate(4, 8); // C4 to B4
+const durations = new Array(8).fill(1); // All quarter notes
+
+// Create simple isorhythm - pitches and durations have same length
+const solfege = dj.Rhythm.isorhythm(pitches_cmajor, durations);
+console.log('Solfege:', solfege);
+
+# %% [markdown]
+If the lengths are not factors of each other, the score will expand with interesting patterns.
+
+# %% [javascript]
+// Create isorhythm with different length patterns
+const varied_durations = [2, 1, 1, 2, 1, 1, 2, 1]; // 8 durations, varied pattern
+const isorhythm_notes = dj.Rhythm.isorhythm(pitches_cmajor, varied_durations);
+console.log('Isorhythm with varied durations:', isorhythm_notes);
+
+# %% [markdown]
+### Composition
+
+I use naming conventions like `track1a_` for the first (`a`) part of track `1`, then the description of the object after the underscore `_`. This helps organize compositions. Because the length of the note list (6 items) differs from that of durations (10 items), and durations sum to 8 with the default time signature, each measure will contain the same durations, but with different notes, providing interesting evolving patterns. In this example, I aim to create a melody in E major.
+
+# %% [javascript]
+// Create a more complex isorhythm example
+const track1a_p = [68, 64, 71, 69, 75, 73]; // pitches in E major
+const track1a_d = [1, 0.5, 0.25, 0.5, 1, 0.75, 0.5, 0.5, 1, 2]; // varied durations
+
+const track1a_n = dj.Rhythm.isorhythm(track1a_p, track1a_d);
+console.log('Complex isorhythm composition:', track1a_n);
+
+# %% [markdown]
+## Additive and subtractive processes
+
+# %% [markdown]
+A forward additive process on [A, B, C, D] will take the first note, then the first and second, then first, second and third and so on as [A, A, B, A, B, C, A, B, C, D]. Two repetitions will expand the melody more slowly, as [A, A, A, B, A, B, A, B, C, A, B, C, A, B, C, D, A, B, C, D]. Instead of adding the notes gradually, a subtractive process removes them. A forward subtractive process with one repetition will go as [A, B, C, D, B, C, D, C, D, D].
+
+# %% [markdown]
+### Example
+
+To show what is an additive process, let's take the solfège. I will apply additive and subtractive processes, forward and backward on C4, D4, E4, F4, G4, A4, B4, C5. First, the **additive forward process** grows by iteratively adding the next note from the beginning.
+
+```
+    C4,
+    C4, D4,
+    C4, D4, E4,
+    C4, D4, E4, F4,
+    C4, D4, E4, F4, G4,
+    C4, D4, E4, F4, G4, A4, 
+    C4, D4, E4, F4, G4, A4, B4, 
+    C4, D4, E4, F4, G4, A4, B4, C5
+```
+
+# %% [javascript]
+// Create an additive forward process
+const additiveForward = new dj.MinimalismProcess('additive', 'forward');
+const af_process = additiveForward.generate(solfege);
+console.log('Additive forward process:', af_process);
+
+# %% [markdown]
+The **additive backward process** grows from the end of the melody and iteratively adds the previous one.
+
+```
+                                        C5,
+                                 B4, C5,
+                          A4, B4, C5,
+                   G4, A4, B4, C5,
+            F4, G4, A4, B4, C5,
+     E4, F4, G4, A4, B4, C5,
+D4, E4, F4, G4, A4, B4, C5,
+C4, D4, E4, F4, G4, A4, B4, C5
+```
+
+# %% [javascript]
+// Create an additive backward process
+const additiveBackward = new dj.MinimalismProcess('additive', 'backward');
+const ab_process = additiveBackward.generate(solfege);
+console.log('Additive backward process:', ab_process);
+
+# %% [markdown]
+The **subtractive forward process** starts with the full melody and iteratively removes the first note.
+
+```
+C4, D4, E4, F4, G4, A4, B4, C5,
+    D4, E4, F4, G4, A4, B4, C5,
+        E4, F4, G4, A4, B4, C5,
+            F4, G4, A4, B4, C5,
+                G4, A4, B4, C5,
+                    A4, B4, C5,
+                        B4, C5,
+                            C5
+```
+
+# %% [javascript]
+// Create a subtractive forward process
+const subtractiveForward = new dj.MinimalismProcess('subtractive', 'forward');
+const sf_process = subtractiveForward.generate(solfege);
+console.log('Subtractive forward process:', sf_process);
+
+# %% [markdown]
+The **subtractive backward process** starts with the full melody and iteratively removes the last note.
+
+```
+C4, D4, E4, F4, G4, A4, B4, C5,
+C4, D4, E4, F4, G4, A4, B4,
+C4, D4, E4, F4, G4, A4,
+C4, D4, E4, F4, G4,
+C4, D4, E4, F4,
+C4, D4, E4,
+C4, D4,
+C4
+```
+
+# %% [javascript]
+// Create a subtractive backward process
+const subtractiveBackward = new dj.MinimalismProcess('subtractive', 'backward');
+const sb_process = subtractiveBackward.generate(solfege);
+console.log('Subtractive backward process:', sb_process);
+
+# %% [markdown]
+## Shuffling
+
+# %% [markdown]
+Shuffling is a stochastic process that randomizes the order of elements while preserving the original content. In musical terms, this means we keep the same pitches and durations but change their temporal arrangement, creating new rhythmic and melodic patterns from existing material.
+
+# %% [javascript]
+// Create a shuffle function for musical sequences
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+// Shuffle the solfege pitches while keeping durations
+const shuffled_pitches = shuffleArray(pitches_cmajor);
+const shuffled_solfege = dj.Rhythm.isorhythm(shuffled_pitches, durations);
+console.log('Shuffled solfege:', shuffled_solfege);
+
+# %% [markdown]
+## Tintinnabuli
+
+# %% [markdown]
+Tintinnabuli is a compositional technique developed by Arvo Pärt that creates a bell-like sonority. It consists of two voices: the M-voice (melodic voice) that moves by step, and the T-voice (tintinnabuli voice) that sounds notes from a tonic triad. The T-voice can be positioned above or below the M-voice and can sound the 1st, 2nd, or 3rd position of the triad.
+
+# %% [javascript]
+// Create a simple M-voice (melodic line)
+const m_voice = [
+  {pitch: 60, duration: 1, time: 0},  // C
+  {pitch: 62, duration: 1, time: 1},  // D
+  {pitch: 64, duration: 1, time: 2},  // E
+  {pitch: 65, duration: 1, time: 3},  // F
+  {pitch: 64, duration: 1, time: 4},  // E
+  {pitch: 62, duration: 1, time: 5},  // D
+  {pitch: 60, duration: 2, time: 6},  // C
+];
+
+// Create T-voice based on C major triad (C-E-G)
+const tintinnabuli = new dj.Tintinnabuli('C', 'major', 'above', 1);
+const t_voice = tintinnabuli.generate(m_voice);
+
+console.log('M-voice:', m_voice);
+console.log('T-voice:', t_voice);
+
+// Combine both voices
+const tintinnabuli_piece = {
+  'm_voice': m_voice,
+  't_voice': t_voice
+};
+
+console.log('Tintinnabuli composition:', tintinnabuli_piece);
+
+# %% [markdown]
+## Voicing
+
+# %% [markdown]
+Voicing refers to how chord tones are distributed across different octaves and instruments. In minimalist composition, simple voicing techniques can create rich harmonic textures from basic chord progressions.
+
+# %% [javascript]
+// Create a simple chord progression
+const progression = new dj.Progression('C', 'major');
+const chords = progression.generate({length: 4}); // I-vi-IV-V progression
+
+// Create voicing for the progression
+const voice = new dj.Voice();
+const voiced_progression = voice.fourPartHarmony(chords, {
+  voicing: 'close',
+  doubling: 'root'
+});
+
+console.log('Chord progression:', chords);
+console.log('Voiced progression:', voiced_progression);
+
+# %% [markdown]
+### Creating Harmonic Rhythm
+
+# %% [javascript]
+// Create harmonic rhythm by mapping chords to specific durations
+const harmonic_rhythm = [2, 1, 1, 4]; // Different chord durations
+const harmonic_sequence = [];
+
+let currentTime = 0;
+chords.forEach((chord, index) => {
+  const duration = harmonic_rhythm[index % harmonic_rhythm.length];
+  
+  // Add each chord tone as simultaneous notes
+  chord.pitches.forEach((pitch, voiceIndex) => {
+    harmonic_sequence.push({
+      pitch: pitch,
+      duration: duration,
+      time: currentTime,
+      voice: voiceIndex
+    });
+  });
+  
+  currentTime += duration;
+});
+
+console.log('Harmonic sequence with rhythm:', harmonic_sequence);
+
+# %% [markdown]
+## Advanced Minimalist Techniques
+
+# %% [markdown]
+### Phase Shifting
+
+Phase shifting involves playing the same musical pattern at slightly different tempos or with slight delays, creating complex polyrhythmic textures as the patterns move in and out of phase.
+
+# %% [javascript]
+// Create a simple pattern for phase shifting
+const base_pattern = [
+  {pitch: 60, duration: 0.5, time: 0},
+  {pitch: 64, duration: 0.5, time: 0.5},
+  {pitch: 67, duration: 0.5, time: 1},
+  {pitch: 72, duration: 0.5, time: 1.5}
+];
+
+// Create phase-shifted versions
+function createPhaseShift(pattern, shift) {
+  return pattern.map(note => ({
+    ...note,
+    time: note.time + shift
+  }));
+}
+
+const phase_shifts = [];
+for (let i = 0; i < 4; i++) {
+  const shift = i * 0.125; // Gradual phase shift
+  phase_shifts.push(createPhaseShift(base_pattern, shift));
+}
+
+console.log('Phase-shifted patterns:', phase_shifts);
+
+# %% [markdown]
+### Metric Modulation
+
+Metric modulation changes the perceived beat or meter while maintaining the same underlying pulse, creating the illusion of tempo change without actually changing the tempo.
+
+# %% [javascript]
+// Create metric modulation by changing note groupings
+const base_pulse = 0.25; // Sixteenth note pulse
+
+// Original meter: 4/4 (groups of 4)
+const original_meter = [];
+for (let i = 0; i < 16; i++) {
+  const accent = (i % 4 === 0) ? 0.8 : 0.4; // Accent every 4th beat
+  original_meter.push({
+    pitch: 60 + (i % 8),
+    duration: base_pulse,
+    time: i * base_pulse,
+    velocity: accent
+  });
+}
+
+// Modulated meter: 3/4 feel (groups of 3)
+const modulated_meter = [];
+for (let i = 0; i < 15; i++) {
+  const accent = (i % 3 === 0) ? 0.8 : 0.4; // Accent every 3rd beat
+  modulated_meter.push({
+    pitch: 60 + (i % 8),
+    duration: base_pulse,
+    time: i * base_pulse,
+    velocity: accent
+  });
+}
+
+console.log('Original 4/4 meter:', original_meter);
+console.log('Modulated to 3/4 feel:', modulated_meter);
+
+# %% [markdown]
+This exploration of minimalist techniques in Djalgo demonstrates how simple mathematical operations can create complex and engaging musical textures. From basic isorhythms to advanced phase shifting, these techniques provide a foundation for algorithmic composition that balances predictability with surprise, simplicity with complexity.
+
+# %% [markdown]
+<div class="main-container">
+    <div class="nav-container">
+        <a href="#" class="nav-link">← previous</a>
+        <div class="title">Djalgo's User Guide</div>
+        <a href="#" class="nav-link">next →</a>
+    </div>
+    <div class="toc-container">
+        <ul>
+            <li><a href="#">01. Getting Started</a></li>
+            <li><a href="#">02. Harmonies</a></li>
+            <li><a href="#">03. Loops</a></li>
+            <li><a href="#" class="active">> 04. Minimalism</a></li>
+            <li><a href="#">05. Walks</a></li>
+            <li><a href="#">06. Fractals</a></li>
+            <li><a href="#">07. Genetic algorithms</a></li>
+        </ul>
+    </div>
+    <div class="copyright-container">© Essi Parent 2024</div>
+</div>
+
+# %% [html]
+<style>
+    .main-container {
+        background-color: #fff;
+        overflow: hidden;
+        width: 100%;
+        margin: 0 auto;
+    }
+    .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+    }
+    .copyright-container {
+        font-size: 12px;
+        display: flex;
+        justify-content: flex-end;
+        text-align: right;
+        padding: 15px 20px;
+    }
+    .nav-link {
+        text-decoration: none;
+        color: #333;
+        font-weight: bold;
+    }
+    .title {
+        font-size: 18px;
+        font-weight: bold;
+        text-align: center;
+        flex-grow: 1;
+        margin: 0 20px;
+    }
+    .toc-container {
+        padding: 15px 20px;
+        border-top: 1px solid #ccc;
+    }
+    .toc-container ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    .toc-container li {
+        margin-bottom: 8px;
+    }
+    .toc-container a {
+        text-decoration: none;
+        color: #555;
+    }
+    .toc-container a:hover {
+        text-decoration: underline;
+    }
+    .toc-container a.active {
+        color: #333;
+        font-weight: bold;
+    }
+</style>

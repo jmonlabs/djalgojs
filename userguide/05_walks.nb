@@ -1,0 +1,651 @@
+# %% [markdown]
+# 5. Walks
+
+# %% [markdown]
+The concept of walks in algorithmic composition involves creating musical sequences through various mathematical and probabilistic processes. Unlike deterministic patterns, walks introduce controlled randomness and organic evolution to musical material. In this section, we explore different types of walks: random walks based on probability distributions, Gaussian processes for smooth melodic curves, celestial walks inspired by planetary motion, and mathematical sequences like Fibonacci numbers.
+
+# %% [esm]
+import {dj, viz} from "https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js?v=1"
+globalThis.dj = dj;
+globalThis.viz = viz;
+
+# %% [markdown]
+## Random Walks
+
+# %% [markdown]
+Random walks are stochastic processes where each step is determined by chance, but within controlled parameters. In music, this creates organic-sounding melodies that have direction without being entirely predictable. We can control the walk through probability distributions, step sizes, and boundary conditions.
+
+# %% [javascript]
+// Create a simple random walk for pitch generation
+class RandomWalk {
+  constructor(start = 60, minPitch = 48, maxPitch = 84) {
+    this.current = start;
+    this.min = minPitch;
+    this.max = maxPitch;
+  }
+  
+  // Normal distribution approximation using Box-Muller transform
+  normalRandom(mean = 0, stdDev = 1) {
+    let u = 0, v = 0;
+    while(u === 0) u = Math.random(); // Converting [0,1) to (0,1)
+    while(v === 0) v = Math.random();
+    const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    return z * stdDev + mean;
+  }
+  
+  step(stepSize = 2) {
+    const step = Math.round(this.normalRandom(0, stepSize));
+    this.current = Math.max(this.min, Math.min(this.max, this.current + step));
+    return this.current;
+  }
+  
+  generate(length, stepSize = 2) {
+    const walk = [this.current];
+    for (let i = 1; i < length; i++) {
+      walk.push(this.step(stepSize));
+    }
+    return walk;
+  }
+}
+
+// Generate a random walk melody
+const walker = new RandomWalk(60, 48, 84); // Start at C4, range C3-C6
+const walkPitches = walker.generate(16, 3);
+
+// Convert to musical notes
+const walkMelody = walkPitches.map((pitch, index) => ({
+  pitch: pitch,
+  duration: 0.5,
+  time: index * 0.5
+}));
+
+console.log('Random walk pitches:', walkPitches);
+console.log('Random walk melody:', walkMelody);
+
+# %% [markdown]
+### Branching Walks
+
+# %% [markdown]
+Branching walks create multiple parallel paths that can split and merge, creating polyphonic textures. This is particularly useful for creating complex rhythmic and harmonic structures where multiple voices evolve independently but within related probability spaces.
+
+# %% [javascript]
+// Create a branching random walk system
+class BranchingWalk {
+  constructor(startPitch = 60, branchProbability = 0.3) {
+    this.branches = [{pitch: startPitch, active: true}];
+    this.branchProb = branchProbability;
+  }
+  
+  step() {
+    const newBranches = [];
+    
+    this.branches.forEach(branch => {
+      if (!branch.active) return;
+      
+      // Move existing branch
+      const step = Math.round(Math.random() * 6 - 3); // -3 to +3 semitones
+      const newPitch = Math.max(48, Math.min(84, branch.pitch + step));
+      newBranches.push({pitch: newPitch, active: true});
+      
+      // Possibly create new branch
+      if (Math.random() < this.branchProb && newBranches.length < 4) {
+        const branchStep = Math.round(Math.random() * 8 - 4);
+        const branchPitch = Math.max(48, Math.min(84, branch.pitch + branchStep));
+        newBranches.push({pitch: branchPitch, active: true});
+      }
+    });
+    
+    this.branches = newBranches;
+    return this.branches.map(b => b.pitch);
+  }
+  
+  generate(steps) {
+    const sequence = [];
+    sequence.push(this.branches.map(b => b.pitch));
+    
+    for (let i = 1; i < steps; i++) {
+      sequence.push(this.step());
+    }
+    
+    return sequence;
+  }
+}
+
+// Generate branching walk
+const branchWalker = new BranchingWalk(60, 0.2);
+const branchSequence = branchWalker.generate(12);
+
+console.log('Branching walk sequence:', branchSequence);
+
+// Convert to polyphonic notation
+const polyphonicWalk = [];
+branchSequence.forEach((pitches, timeIndex) => {
+  pitches.forEach((pitch, voiceIndex) => {
+    polyphonicWalk.push({
+      pitch: pitch,
+      duration: 1,
+      time: timeIndex,
+      voice: voiceIndex
+    });
+  });
+});
+
+console.log('Polyphonic walk notation:', polyphonicWalk);
+
+# %% [markdown]
+## Gaussian Processes
+
+# %% [markdown]
+Gaussian processes provide a way to generate smooth, correlated sequences that are particularly well-suited for melodic lines. Unlike random walks, Gaussian processes can be "fitted" to existing data or used "unfitted" with kernel functions to generate entirely new sequences with desired statistical properties.
+
+# %% [javascript]
+// Simple Gaussian Process implementation
+class SimpleGaussianProcess {
+  constructor(lengthScale = 1.0, amplitude = 1.0) {
+    this.lengthScale = lengthScale;
+    this.amplitude = amplitude;
+  }
+  
+  // RBF (Radial Basis Function) kernel
+  kernel(x1, x2) {
+    const distance = Math.abs(x1 - x2);
+    return this.amplitude * Math.exp(-0.5 * Math.pow(distance / this.lengthScale, 2));
+  }
+  
+  // Generate covariance matrix
+  covarianceMatrix(points) {
+    const n = points.length;
+    const matrix = [];
+    
+    for (let i = 0; i < n; i++) {
+      matrix[i] = [];
+      for (let j = 0; j < n; j++) {
+        matrix[i][j] = this.kernel(points[i], points[j]);
+        if (i === j) matrix[i][j] += 1e-6; // Add small diagonal term for stability
+      }
+    }
+    
+    return matrix;
+  }
+  
+  // Simple multivariate normal sampling (approximation)
+  sample(points, mean = 0) {
+    const n = points.length;
+    const samples = [];
+    
+    // Generate independent normal samples
+    for (let i = 0; i < n; i++) {
+      let u = 0, v = 0;
+      while(u === 0) u = Math.random();
+      while(v === 0) v = Math.random();
+      const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+      samples[i] = z * Math.sqrt(this.kernel(points[i], points[i])) + mean;
+    }
+    
+    return samples;
+  }
+  
+  // Generate a smooth musical curve
+  generateMelody(length, meanPitch = 60, pitchRange = 24) {
+    const timePoints = Array.from({length}, (_, i) => i);
+    const samples = this.sample(timePoints, 0);
+    
+    // Scale to pitch range
+    const minSample = Math.min(...samples);
+    const maxSample = Math.max(...samples);
+    const range = maxSample - minSample || 1;
+    
+    return samples.map((sample, index) => {
+      const normalizedSample = (sample - minSample) / range;
+      const pitch = Math.round(meanPitch + (normalizedSample - 0.5) * pitchRange);
+      return {
+        pitch: Math.max(36, Math.min(96, pitch)),
+        duration: 0.5,
+        time: index * 0.5
+      };
+    });
+  }
+}
+
+// Generate GP-based melody
+const gp = new SimpleGaussianProcess(2.0, 1.0); // Smooth, moderate amplitude
+const gpMelody = gp.generateMelody(20, 65, 20);
+
+console.log('Gaussian Process melody:', gpMelody);
+
+# %% [markdown]
+### Fitted Gaussian Processes
+
+# %% [markdown]
+When we have existing musical data, we can fit a Gaussian process to it and then generate new sequences that follow similar statistical patterns. This is useful for style transfer or creating variations on existing themes.
+
+# %% [javascript]
+// Create a fitted GP that learns from existing data
+class FittedGaussianProcess extends SimpleGaussianProcess {
+  constructor(lengthScale = 1.0, amplitude = 1.0) {
+    super(lengthScale, amplitude);
+    this.trainingPoints = [];
+    this.trainingValues = [];
+  }
+  
+  fit(points, values) {
+    this.trainingPoints = [...points];
+    this.trainingValues = [...values];
+  }
+  
+  // Predict at new points based on training data
+  predict(newPoints) {
+    if (this.trainingPoints.length === 0) {
+      return this.sample(newPoints);
+    }
+    
+    // Simple interpolation-based prediction (simplified version)
+    return newPoints.map(newPoint => {
+      let weightedSum = 0;
+      let weightSum = 0;
+      
+      this.trainingPoints.forEach((trainPoint, i) => {
+        const weight = this.kernel(newPoint, trainPoint);
+        weightedSum += weight * this.trainingValues[i];
+        weightSum += weight;
+      });
+      
+      return weightSum > 0 ? weightedSum / weightSum : 0;
+    });
+  }
+  
+  generateFromExample(exampleMelody, newLength) {
+    // Extract training data from example
+    const trainPoints = exampleMelody.map((_, i) => i);
+    const trainValues = exampleMelody.map(note => note.pitch - 60); // Center around 60
+    
+    this.fit(trainPoints, trainValues);
+    
+    // Generate new sequence
+    const newPoints = Array.from({length: newLength}, (_, i) => i);
+    const predictions = this.predict(newPoints);
+    
+    return predictions.map((prediction, index) => ({
+      pitch: Math.round(prediction + 60),
+      duration: 0.5,
+      time: index * 0.5
+    }));
+  }
+}
+
+// Create example melody to learn from
+const exampleMelody = [
+  {pitch: 60, duration: 0.5, time: 0},
+  {pitch: 62, duration: 0.5, time: 0.5},
+  {pitch: 64, duration: 0.5, time: 1},
+  {pitch: 65, duration: 0.5, time: 1.5},
+  {pitch: 64, duration: 0.5, time: 2},
+  {pitch: 62, duration: 0.5, time: 2.5},
+  {pitch: 60, duration: 0.5, time: 3}
+];
+
+// Generate variation using fitted GP
+const fittedGP = new FittedGaussianProcess(1.5, 0.5);
+const variation = fittedGP.generateFromExample(exampleMelody, 16);
+
+console.log('Original melody:', exampleMelody);
+console.log('GP-generated variation:', variation);
+
+# %% [markdown]
+## Celestial Walks
+
+# %% [markdown]
+Celestial walks use astronomical motions as inspiration for musical generation. By simulating planetary orbits, lunar phases, or other celestial phenomena, we can create musical patterns that are both mathematically precise and organically flowing. These patterns often exhibit periodicity and harmonic relationships found in natural systems.
+
+# %% [javascript]
+// Celestial body simulation for musical generation
+class CelestialBody {
+  constructor(distance, orbitalSpeed, phase = 0, amplitude = 1) {
+    this.distance = distance;
+    this.speed = orbitalSpeed;
+    this.phase = phase;
+    this.amplitude = amplitude;
+    this.currentAngle = phase;
+  }
+  
+  getPosition(time) {
+    const angle = this.phase + this.speed * time;
+    return {
+      x: this.distance * Math.cos(angle) * this.amplitude,
+      y: this.distance * Math.sin(angle) * this.amplitude,
+      angle: angle
+    };
+  }
+  
+  update(deltaTime) {
+    this.currentAngle += this.speed * deltaTime;
+    return this.getPosition(0);
+  }
+}
+
+class SolarSystem {
+  constructor() {
+    this.bodies = [];
+    this.time = 0;
+  }
+  
+  addBody(distance, speed, phase = 0, amplitude = 1) {
+    this.bodies.push(new CelestialBody(distance, speed, phase, amplitude));
+  }
+  
+  simulate(steps, deltaTime = 0.1) {
+    const sequence = [];
+    
+    for (let step = 0; step < steps; step++) {
+      const positions = this.bodies.map(body => body.getPosition(this.time));
+      sequence.push({
+        time: this.time,
+        positions: positions
+      });
+      this.time += deltaTime;
+    }
+    
+    return sequence;
+  }
+  
+  generateMusic(steps, basePitch = 60, pitchRange = 24) {
+    const simulation = this.simulate(steps);
+    const tracks = {};
+    
+    this.bodies.forEach((body, index) => {
+      const trackName = `celestial_${index}`;
+      tracks[trackName] = simulation.map((frame, frameIndex) => {
+        const pos = frame.positions[index];
+        
+        // Convert Y position to pitch
+        const normalizedY = (pos.y + body.distance * body.amplitude) / (2 * body.distance * body.amplitude);
+        const pitch = Math.round(basePitch + normalizedY * pitchRange);
+        
+        // Convert X position to volume/velocity
+        const normalizedX = (pos.x + body.distance * body.amplitude) / (2 * body.distance * body.amplitude);
+        const velocity = 0.3 + normalizedX * 0.5;
+        
+        return {
+          pitch: Math.max(36, Math.min(96, pitch)),
+          duration: 0.25,
+          time: frameIndex * 0.25,
+          velocity: velocity
+        };
+      });
+    });
+    
+    return tracks;
+  }
+}
+
+// Create a simple solar system
+const solarSystem = new SolarSystem();
+
+// Add celestial bodies (distance, orbital speed, phase, amplitude)
+solarSystem.addBody(1.0, 0.5, 0, 1);        // Inner planet
+solarSystem.addBody(1.5, 0.3, Math.PI/3, 1); // Middle planet  
+solarSystem.addBody(2.0, 0.2, Math.PI, 1);   // Outer planet
+
+// Generate celestial music
+const celestialMusic = solarSystem.generateMusic(32, 60, 20);
+
+console.log('Celestial music tracks:', celestialMusic);
+
+# %% [markdown]
+## Fibonacci and Mathematical Sequences
+
+# %% [markdown]
+Mathematical sequences like Fibonacci numbers, prime numbers, or other integer sequences can be mapped to musical parameters to create structured yet organic compositions. The Fibonacci sequence, in particular, has natural connections to musical proportions and can create pleasing rhythmic and melodic patterns.
+
+# %% [javascript]
+// Fibonacci sequence generator
+function* fibonacciGenerator() {
+  let a = 0, b = 1;
+  while (true) {
+    yield a;
+    [a, b] = [b, a + b];
+  }
+}
+
+// Generate musical sequence from Fibonacci numbers
+function fibonacciToMusic(count, scale, basePitch = 60) {
+  const fib = fibonacciGenerator();
+  const sequence = [];
+  
+  for (let i = 0; i < count; i++) {
+    const fibNum = fib.next().value;
+    
+    // Map Fibonacci number to scale degree
+    const scaleDegree = fibNum % scale.length;
+    const octave = Math.floor(fibNum / scale.length);
+    const pitch = scale[scaleDegree] + (octave * 12);
+    
+    // Map to duration (smaller Fibonacci numbers = shorter durations)
+    const duration = fibNum < 8 ? 0.25 : fibNum < 21 ? 0.5 : 1.0;
+    
+    sequence.push({
+      pitch: basePitch + pitch,
+      duration: duration,
+      time: i > 0 ? sequence[i-1].time + sequence[i-1].duration : 0,
+      fibonacci: fibNum
+    });
+  }
+  
+  return sequence;
+}
+
+// Create C major scale intervals
+const cMajorIntervals = [0, 2, 4, 5, 7, 9, 11]; // C D E F G A B
+
+// Generate Fibonacci-based melody
+const fibonacciMelody = fibonacciToMusic(20, cMajorIntervals, 60);
+
+console.log('Fibonacci melody:', fibonacciMelody);
+
+# %% [markdown]
+### Prime Number Sequences
+
+# %% [javascript]
+// Prime number generator
+function* primeGenerator() {
+  yield 2;
+  const primes = [2];
+  let candidate = 3;
+  
+  while (true) {
+    let isPrime = true;
+    const limit = Math.sqrt(candidate);
+    
+    for (const prime of primes) {
+      if (prime > limit) break;
+      if (candidate % prime === 0) {
+        isPrime = false;
+        break;
+      }
+    }
+    
+    if (isPrime) {
+      primes.push(candidate);
+      yield candidate;
+    }
+    
+    candidate += 2; // Skip even numbers
+  }
+}
+
+// Generate music from prime numbers
+function primesToMusic(count, scale, basePitch = 60) {
+  const primes = primeGenerator();
+  const sequence = [];
+  
+  for (let i = 0; i < count; i++) {
+    const prime = primes.next().value;
+    
+    // Map prime to scale degree
+    const scaleDegree = prime % scale.length;
+    const octave = Math.floor(prime / scale.length) % 3; // Limit octave range
+    const pitch = scale[scaleDegree] + (octave * 12);
+    
+    // Rhythmic pattern based on prime properties
+    const duration = prime % 3 === 0 ? 1.0 : prime % 2 === 0 ? 0.5 : 0.25;
+    
+    sequence.push({
+      pitch: basePitch + pitch,
+      duration: duration,
+      time: i * 0.5, // Regular timing
+      prime: prime
+    });
+  }
+  
+  return sequence;
+}
+
+// Generate prime-based melody
+const primeMelody = primesToMusic(15, cMajorIntervals, 48);
+
+console.log('Prime number melody:', primeMelody);
+
+# %% [markdown]
+## Combining Walk Types
+
+# %% [markdown]
+The real power of walks in algorithmic composition comes from combining different types. We can use Gaussian processes to control the overall shape of a melody while using random walks for local variations, or employ celestial mechanics for rhythm while using mathematical sequences for pitch selection.
+
+# %% [javascript]
+// Combined walk system
+class CombinedWalkSystem {
+  constructor() {
+    this.gp = new SimpleGaussianProcess(3.0, 1.0);
+    this.randomWalk = new RandomWalk(60, 48, 84);
+    this.fibonacci = fibonacciGenerator();
+  }
+  
+  generateCombined(length) {
+    // Generate overall melodic shape with GP
+    const gpCurve = this.gp.generateMelody(length, 60, 16);
+    
+    // Add local variations with random walk
+    const walkPitches = this.randomWalk.generate(length, 1);
+    
+    // Use Fibonacci for rhythmic patterns
+    const fibRhythms = [];
+    for (let i = 0; i < length; i++) {
+      const fib = this.fibonacci.next().value;
+      const duration = fib % 4 === 0 ? 1.0 : fib % 2 === 0 ? 0.5 : 0.25;
+      fibRhythms.push(duration);
+    }
+    
+    // Combine all elements
+    let currentTime = 0;
+    const combined = [];
+    
+    for (let i = 0; i < length; i++) {
+      // Blend GP curve with random walk
+      const gpPitch = gpCurve[i].pitch;
+      const walkDeviation = (walkPitches[i] - 60) * 0.3; // Reduced influence
+      const finalPitch = Math.round(gpPitch + walkDeviation);
+      
+      combined.push({
+        pitch: Math.max(36, Math.min(96, finalPitch)),
+        duration: fibRhythms[i],
+        time: currentTime,
+        sources: {
+          gp: gpPitch,
+          walk: walkPitches[i],
+          rhythm: fibRhythms[i]
+        }
+      });
+      
+      currentTime += fibRhythms[i];
+    }
+    
+    return combined;
+  }
+}
+
+// Generate complex combined walk
+const combinedSystem = new CombinedWalkSystem();
+const combinedWalk = combinedSystem.generateCombined(24);
+
+console.log('Combined walk composition:', combinedWalk);
+
+# %% [markdown]
+This exploration of walks in algorithmic composition demonstrates how mathematical and stochastic processes can create musical material that balances structure with surprise. From simple random walks to complex celestial simulations, these techniques provide composers with powerful tools for generating organic, evolving musical content that maintains both coherence and interest over time.
+
+# %% [markdown]
+<div class="main-container">
+    <div class="nav-container">
+        <a href="#" class="nav-link">← previous</a>
+        <div class="title">Djalgo's User Guide</div>
+        <a href="#" class="nav-link">next →</a>
+    </div>
+    <div class="toc-container">
+        <ul>
+            <li><a href="#">01. Getting Started</a></li>
+            <li><a href="#">02. Harmonies</a></li>
+            <li><a href="#">03. Loops</a></li>
+            <li><a href="#">04. Minimalism</a></li>
+            <li><a href="#" class="active">> 05. Walks</a></li>
+            <li><a href="#">06. Fractals</a></li>
+            <li><a href="#">07. Genetic algorithms</a></li>
+        </ul>
+    </div>
+    <div class="copyright-container">© Essi Parent 2024</div>
+</div>
+
+# %% [html]
+<style>
+    .main-container {
+        background-color: #fff;
+        overflow: hidden;
+        width: 100%;
+        margin: 0 auto;
+    }
+    .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+    }
+    .copyright-container {
+        font-size: 12px;
+        display: flex;
+        justify-content: flex-end;
+        text-align: right;
+        padding: 15px 20px;
+    }
+    .nav-link {
+        text-decoration: none;
+        color: #333;
+        font-weight: bold;
+    }
+    .title {
+        font-size: 18px;
+        font-weight: bold;
+        text-align: center;
+        flex-grow: 1;
+        margin: 0 20px;
+    }
+    .toc-container {
+        padding: 15px 20px;
+        border-top: 1px solid #ccc;
+    }
+    .toc-container ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    .toc-container li {
+        margin-bottom: 8px;
+    }
+    .toc-container a {
+        text-decoration: none;
+        color: #555;
+    }
+    .toc-container a:hover {
+        text-decoration: underline;
+    }
+    .toc-container a.active {
+        color: #333;
+        font-weight: bold;
+    }
+</style>

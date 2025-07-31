@@ -1,0 +1,750 @@
+# %% [markdown]
+# 6. Fractals
+
+# %% [markdown]
+Fractals offer a fascinating approach to algorithmic composition by translating mathematical patterns into musical sequences. These self-similar structures, found throughout nature and mathematics, can generate complex musical textures from simple rules. In this section, we explore three main types of fractals for music generation: cellular automata for rhythmic patterns, the Mandelbrot set for melodic sequences, and logistic maps for exploring chaos in musical composition.
+
+# %% [esm]
+import {dj, viz} from "https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js?v=1"
+globalThis.dj = dj;
+globalThis.viz = viz;
+
+# %% [markdown]
+## Cellular Automata
+
+# %% [markdown]
+Cellular automata are discrete mathematical models consisting of a grid of cells, each in one of a finite number of states. The cells evolve over discrete time steps according to a set of rules based on the states of neighboring cells. Stephen Wolfram's classification identifies 256 elementary cellular automaton rules, each producing different patterns that can be translated into rhythmic and melodic structures.
+
+# %% [javascript]
+// Elementary Cellular Automaton implementation
+class CellularAutomaton {
+  constructor(rule, width = 64, initialCondition = null) {
+    this.rule = rule;
+    this.width = width;
+    this.ruleSet = this.generateRuleSet(rule);
+    
+    // Initialize with single active cell in center or custom condition
+    this.state = initialCondition || new Array(width).fill(0);
+    if (!initialCondition) {
+      this.state[Math.floor(width / 2)] = 1;
+    }
+    
+    this.history = [this.state.slice()];
+  }
+  
+  // Convert rule number to rule set
+  generateRuleSet(ruleNumber) {
+    const binary = ruleNumber.toString(2).padStart(8, '0');
+    const ruleSet = {};
+    
+    // Map all possible 3-cell configurations to outcomes
+    const configs = ['111', '110', '101', '100', '011', '010', '001', '000'];
+    configs.forEach((config, index) => {
+      ruleSet[config] = parseInt(binary[index]);
+    });
+    
+    return ruleSet;
+  }
+  
+  // Get next state based on current state and rule
+  nextGeneration() {
+    const newState = new Array(this.width).fill(0);
+    
+    for (let i = 0; i < this.width; i++) {
+      // Get neighborhood (wrap around edges)
+      const left = this.state[(i - 1 + this.width) % this.width];
+      const center = this.state[i];
+      const right = this.state[(i + 1) % this.width];
+      
+      const pattern = `${left}${center}${right}`;
+      newState[i] = this.ruleSet[pattern] || 0;
+    }
+    
+    this.state = newState;
+    this.history.push(this.state.slice());
+    return this.state;
+  }
+  
+  // Generate multiple generations
+  evolve(generations) {
+    for (let i = 0; i < generations; i++) {
+      this.nextGeneration();
+    }
+    return this.history;
+  }
+  
+  // Extract musical patterns from CA strips
+  extractStrips(generations, stripIndices = null) {
+    const evolution = this.evolve(generations);
+    
+    if (!stripIndices) {
+      // Default: extract a few strips from different positions
+      stripIndices = [
+        Math.floor(this.width * 0.25),
+        Math.floor(this.width * 0.5),
+        Math.floor(this.width * 0.75)
+      ];
+    }
+    
+    const strips = {};
+    stripIndices.forEach((stripIndex, i) => {
+      strips[`strip_${i}`] = evolution.map(generation => generation[stripIndex]);
+    });
+    
+    return strips;
+  }
+  
+  // Convert CA evolution to musical sequences
+  generateMusic(generations, pitchMapping = null, basePitch = 60) {
+    const strips = this.extractStrips(generations);
+    const tracks = {};
+    
+    Object.entries(strips).forEach(([stripName, stripData]) => {
+      tracks[stripName] = stripData.map((value, timeIndex) => {
+        let pitch = null;
+        
+        if (value === 1) { // Only generate notes for active cells
+          if (pitchMapping && pitchMapping.length > 0) {
+            pitch = pitchMapping[timeIndex % pitchMapping.length];
+          } else {
+            // Default mapping: use time index to create melody
+            const scaleDegree = timeIndex % 7; // Major scale degrees
+            const scaleIntervals = [0, 2, 4, 5, 7, 9, 11];
+            pitch = basePitch + scaleIntervals[scaleDegree];
+          }
+        }
+        
+        return {
+          pitch: pitch,
+          duration: 0.25,
+          time: timeIndex * 0.25,
+          active: value === 1
+        };
+      }).filter(note => note.active); // Only include active notes
+    });
+    
+    return tracks;
+  }
+  
+  // Visualize the CA evolution as a simple text pattern
+  visualize(generations = 20) {
+    const evolution = this.evolve(generations);
+    return evolution.map(generation => 
+      generation.map(cell => cell ? '█' : '░').join('')
+    );
+  }
+}
+
+// Create and evolve some interesting CA rules
+const ca30 = new CellularAutomaton(30, 32); // Rule 30 - chaotic
+const ca110 = new CellularAutomaton(110, 32); // Rule 110 - complex patterns
+
+// Generate musical patterns
+const rule30Music = ca30.generateMusic(16);
+const rule110Music = ca110.generateMusic(16);
+
+console.log('Rule 30 CA visualization:');
+console.log(ca30.visualize(10).join('\n'));
+
+console.log('\nRule 30 musical tracks:', rule30Music);
+console.log('Rule 110 musical tracks:', rule110Music);
+
+# %% [markdown]
+### Advanced CA Techniques
+
+# %% [markdown]
+We can create more sophisticated musical applications by using different initial conditions, multiple overlapping CA rules, or by mapping different aspects of the CA evolution to various musical parameters.
+
+# %% [javascript]
+// Multi-rule CA system for complex textures
+class MultiRuleCA {
+  constructor(rules, width = 32) {
+    this.automata = rules.map(rule => new CellularAutomaton(rule, width));
+    this.width = width;
+  }
+  
+  evolveAll(generations) {
+    return this.automata.map(ca => ca.evolve(generations));
+  }
+  
+  generateLayeredMusic(generations, scales = null) {
+    const allEvolutions = this.evolveAll(generations);
+    const tracks = {};
+    
+    allEvolutions.forEach((evolution, ruleIndex) => {
+      const trackName = `rule_${this.automata[ruleIndex].rule}`;
+      const scale = scales ? scales[ruleIndex % scales.length] : null;
+      
+      // Extract single strip from center
+      const centerStrip = evolution.map(gen => gen[Math.floor(this.width / 2)]);
+      
+      tracks[trackName] = centerStrip.map((value, timeIndex) => {
+        if (value === 1) {
+          let pitch;
+          if (scale) {
+            const scaleDegree = timeIndex % scale.length;
+            pitch = scale[scaleDegree];
+          } else {
+            pitch = 60 + (ruleIndex * 12) + (timeIndex % 8);
+          }
+          
+          return {
+            pitch: pitch,
+            duration: 0.5,
+            time: timeIndex * 0.5,
+            rule: this.automata[ruleIndex].rule
+          };
+        }
+        return null;
+      }).filter(note => note !== null);
+    });
+    
+    return tracks;
+  }
+}
+
+// Create multi-rule system
+const multiCA = new MultiRuleCA([30, 54, 90, 110]);
+
+// Define different scales for each rule
+const scales = [
+  [60, 62, 64, 67, 69], // Pentatonic
+  [48, 51, 53, 56, 58], // Minor pentatonic  
+  [72, 74, 76, 77, 79, 81, 83], // Major scale
+  [36, 40, 43, 47, 50] // Power chord intervals
+];
+
+const layeredMusic = multiCA.generateLayeredMusic(20, scales);
+console.log('Multi-rule CA music:', layeredMusic);
+
+# %% [markdown]
+## Mandelbrot Set
+
+# %% [markdown]
+The Mandelbrot set is one of the most famous fractals, defined by the iterative equation z = z² + c in the complex plane. Points that remain bounded under iteration belong to the set, while others escape to infinity. We can extract musical sequences by analyzing the escape times, orbits, or boundaries of this fractal.
+
+# %% [javascript]
+// Mandelbrot Set implementation for music generation
+class MandelbrotSet {
+  constructor(width = 64, height = 64, maxIterations = 100) {
+    this.width = width;
+    this.height = height;
+    this.maxIter = maxIterations;
+    this.data = null;
+  }
+  
+  // Complex number operations
+  complexMultiply(a, b) {
+    return {
+      real: a.real * b.real - a.imag * b.imag,
+      imag: a.real * b.imag + a.imag * b.real
+    };
+  }
+  
+  complexAdd(a, b) {
+    return {
+      real: a.real + b.real,
+      imag: a.imag + b.imag
+    };
+  }
+  
+  complexMagnitude(z) {
+    return Math.sqrt(z.real * z.real + z.imag * z.imag);
+  }
+  
+  // Calculate escape time for a point c
+  escapeTime(c) {
+    let z = { real: 0, imag: 0 };
+    let iterations = 0;
+    
+    while (iterations < this.maxIter && this.complexMagnitude(z) <= 2) {
+      z = this.complexAdd(this.complexMultiply(z, z), c);
+      iterations++;
+    }
+    
+    return iterations;
+  }
+  
+  // Generate the Mandelbrot set data
+  generate(xMin = -2.5, xMax = 1.5, yMin = -2, yMax = 2) {
+    this.data = [];
+    
+    for (let y = 0; y < this.height; y++) {
+      this.data[y] = [];
+      for (let x = 0; x < this.width; x++) {
+        const real = xMin + (x / this.width) * (xMax - xMin);
+        const imag = yMin + (y / this.height) * (yMax - yMin);
+        
+        const escapeTime = this.escapeTime({ real, imag });
+        this.data[y][x] = escapeTime;
+      }
+    }
+    
+    return this.data;
+  }
+  
+  // Extract musical sequences from the fractal
+  extractSequences(method = 'horizontal') {
+    if (!this.data) this.generate();
+    
+    const sequences = {};
+    
+    switch (method) {
+      case 'horizontal':
+        // Extract horizontal lines as melodies
+        for (let y = 0; y < this.height; y += Math.floor(this.height / 4)) {
+          sequences[`line_${y}`] = this.data[y].slice();
+        }
+        break;
+        
+      case 'vertical':
+        // Extract vertical lines
+        for (let x = 0; x < this.width; x += Math.floor(this.width / 4)) {
+          sequences[`column_${x}`] = [];
+          for (let y = 0; y < this.height; y++) {
+            sequences[`column_${x}`].push(this.data[y][x]);
+          }
+        }
+        break;
+        
+      case 'diagonal':
+        // Extract diagonal sequences
+        sequences.main_diagonal = [];
+        sequences.anti_diagonal = [];
+        for (let i = 0; i < Math.min(this.width, this.height); i++) {
+          sequences.main_diagonal.push(this.data[i][i]);
+          sequences.anti_diagonal.push(this.data[i][this.width - 1 - i]);
+        }
+        break;
+        
+      case 'boundary':
+        // Extract points near the boundary (escape time close to maxIter)
+        const boundaryThreshold = this.maxIter * 0.8;
+        sequences.boundary = [];
+        for (let y = 0; y < this.height; y++) {
+          for (let x = 0; x < this.width; x++) {
+            if (this.data[y][x] > boundaryThreshold) {
+              sequences.boundary.push(this.data[y][x]);
+            }
+          }
+        }
+        break;
+    }
+    
+    return sequences;
+  }
+  
+  // Convert escape time sequences to musical notes
+  generateMusic(method = 'horizontal', basePitch = 60, pitchRange = 24) {
+    const sequences = this.extractSequences(method);
+    const tracks = {};
+    
+    Object.entries(sequences).forEach(([name, sequence]) => {
+      if (sequence.length === 0) return;
+      
+      const minEscape = Math.min(...sequence);
+      const maxEscape = Math.max(...sequence);
+      const range = maxEscape - minEscape || 1;
+      
+      tracks[name] = sequence.map((escapeTime, index) => {
+        // Map escape time to pitch
+        const normalized = (escapeTime - minEscape) / range;
+        const pitch = Math.round(basePitch + normalized * pitchRange);
+        
+        // Map escape time to duration (longer escape = shorter note)
+        const duration = escapeTime === this.maxIter ? 1.0 : 
+                        escapeTime > this.maxIter * 0.8 ? 0.5 : 0.25;
+        
+        return {
+          pitch: Math.max(36, Math.min(96, pitch)),
+          duration: duration,
+          time: index * 0.25,
+          escapeTime: escapeTime
+        };
+      });
+    });
+    
+    return tracks;
+  }
+  
+  // Simple ASCII visualization
+  visualize() {
+    if (!this.data) this.generate();
+    
+    return this.data.map(row => 
+      row.map(value => 
+        value === this.maxIter ? '█' : 
+        value > this.maxIter * 0.8 ? '▓' :
+        value > this.maxIter * 0.4 ? '▒' : '░'
+      ).join('')
+    );
+  }
+}
+
+// Generate Mandelbrot-based music
+const mandelbrot = new MandelbrotSet(32, 32, 50);
+const mandelbrotMusic = mandelbrot.generateMusic('horizontal', 60, 20);
+
+console.log('Mandelbrot Set visualization:');
+console.log(mandelbrot.visualize().slice(0, 8).join('\n')); // Show first 8 rows
+
+console.log('Mandelbrot musical tracks:', mandelbrotMusic);
+
+# %% [markdown]
+## Logistic Map
+
+# %% [markdown]
+The logistic map is a deceptively simple equation that demonstrates how complex, chaotic behavior can arise from simple deterministic rules. The equation xₙ₊₁ = r·xₙ(1-xₙ) shows different behaviors depending on the parameter r, from stable fixed points to periodic cycles to full chaos. This makes it perfect for generating musical sequences with controlled levels of predictability and surprise.
+
+# %% [javascript]
+// Logistic Map implementation
+class LogisticMap {
+  constructor(r = 3.7, x0 = 0.5) {
+    this.r = r; // Growth rate parameter
+    this.x = x0; // Initial value (between 0 and 1)
+    this.history = [x0];
+  }
+  
+  // Single iteration of the logistic map
+  iterate() {
+    this.x = this.r * this.x * (1 - this.x);
+    this.history.push(this.x);
+    return this.x;
+  }
+  
+  // Generate sequence of values
+  generate(length) {
+    const values = [this.x];
+    for (let i = 1; i < length; i++) {
+      values.push(this.iterate());
+    }
+    return values;
+  }
+  
+  // Reset to initial conditions
+  reset(r = null, x0 = null) {
+    if (r !== null) this.r = r;
+    if (x0 !== null) this.x = x0;
+    this.history = [this.x];
+  }
+  
+  // Generate music from logistic map values
+  generateMusic(length, pitchRange = 24, basePitch = 60, rhythmMapping = true) {
+    const values = this.generate(length);
+    const sequence = [];
+    
+    values.forEach((value, index) => {
+      // Map value to pitch (values are between 0 and 1)
+      const pitch = Math.round(basePitch + value * pitchRange);
+      
+      // Map value to duration if rhythmMapping is enabled
+      let duration;
+      if (rhythmMapping) {
+        if (value < 0.25) duration = 0.25;
+        else if (value < 0.5) duration = 0.5;
+        else if (value < 0.75) duration = 1.0;
+        else duration = 2.0;
+      } else {
+        duration = 0.5;
+      }
+      
+      // Map value to velocity/dynamics
+      const velocity = 0.3 + value * 0.5;
+      
+      sequence.push({
+        pitch: Math.max(36, Math.min(96, pitch)),
+        duration: duration,
+        time: index * 0.5,
+        velocity: velocity,
+        logisticValue: value
+      });
+    });
+    
+    return sequence;
+  }
+}
+
+// Explore different logistic map behaviors
+const logisticMaps = {
+  stable: new LogisticMap(2.5, 0.3),      // Converges to fixed point
+  periodic: new LogisticMap(3.2, 0.4),    // Periodic behavior
+  chaotic: new LogisticMap(3.9, 0.5),     // Chaotic behavior
+  edge: new LogisticMap(4.0, 0.6)         // Edge of chaos
+};
+
+const logisticMusic = {};
+Object.entries(logisticMaps).forEach(([name, map]) => {
+  logisticMusic[name] = map.generateMusic(20, 20, 60 + Object.keys(logisticMusic).length * 12);
+});
+
+console.log('Logistic map music tracks:', logisticMusic);
+
+# %% [markdown]
+### Parameter Sweeping
+
+# %% [markdown]
+One powerful technique with the logistic map is to slowly change the r parameter over time, creating musical transitions from order to chaos and back again.
+
+# %% [javascript]
+// Parameter sweep for transitioning between different behaviors
+class LogisticMapSweep {
+  constructor(x0 = 0.5) {
+    this.x0 = x0;
+    this.currentX = x0;
+  }
+  
+  generateSweep(length, rStart = 2.0, rEnd = 4.0) {
+    const sequence = [];
+    let currentX = this.x0;
+    
+    for (let i = 0; i < length; i++) {
+      // Linear interpolation of r parameter
+      const progress = i / (length - 1);
+      const r = rStart + progress * (rEnd - rStart);
+      
+      // Apply logistic map with current r
+      currentX = r * currentX * (1 - currentX);
+      
+      sequence.push({
+        value: currentX,
+        r: r,
+        index: i
+      });
+    }
+    
+    return sequence;
+  }
+  
+  generateSweepMusic(length, rStart = 2.0, rEnd = 4.0, basePitch = 60) {
+    const sweep = this.generateSweep(length, rStart, rEnd);
+    
+    return sweep.map((point, index) => {
+      // Map value to pitch
+      const pitch = Math.round(basePitch + point.value * 24);
+      
+      // Map r parameter to duration (higher r = shorter notes)
+      const normalizedR = (point.r - rStart) / (rEnd - rStart);
+      const duration = 2.0 - normalizedR * 1.5; // From 2.0 to 0.5 seconds
+      
+      // Map chaos level to velocity
+      const velocity = 0.4 + normalizedR * 0.4;
+      
+      return {
+        pitch: Math.max(36, Math.min(96, pitch)),
+        duration: duration,
+        time: index * 0.5,
+        velocity: velocity,
+        rParameter: point.r,
+        logisticValue: point.value
+      };
+    });
+  }
+}
+
+// Generate parameter sweep music
+const sweepGenerator = new LogisticMapSweep(0.5);
+const sweepMusic = sweepGenerator.generateSweepMusic(30, 2.0, 4.0, 48);
+
+console.log('Parameter sweep music:', sweepMusic);
+
+# %% [markdown]
+## Combining Fractal Techniques
+
+# %% [markdown]
+The real power of fractal music generation comes from combining different fractal systems. We can use cellular automata for rhythm, Mandelbrot sets for pitch contours, and logistic maps for dynamics, creating rich, multi-layered compositions.
+
+# %% [javascript]
+// Combined fractal composition system
+class FractalComposer {
+  constructor() {
+    this.ca = new CellularAutomaton(110, 32);
+    this.mandelbrot = new MandelbrotSet(16, 16, 30);
+    this.logistic = new LogisticMap(3.8, 0.3);
+  }
+  
+  generateFractalComposition(length) {
+    // Generate rhythmic pattern from CA
+    const caEvolution = this.ca.evolve(length);
+    const rhythmPattern = caEvolution.map(generation => 
+      generation[Math.floor(generation.length / 2)]
+    );
+    
+    // Generate pitch contour from Mandelbrot
+    const mandelbrotData = this.mandelbrot.generate();
+    const pitchContour = mandelbrotData[Math.floor(mandelbrotData.length / 2)];
+    
+    // Generate dynamics from logistic map
+    const logisticValues = this.logistic.generate(length);
+    
+    // Combine all elements
+    const composition = [];
+    let currentTime = 0;
+    
+    for (let i = 0; i < length; i++) {
+      const isActive = rhythmPattern[i] === 1;
+      
+      if (isActive) {
+        // Map Mandelbrot value to pitch
+        const mandelbrotIndex = i % pitchContour.length;
+        const escapeTime = pitchContour[mandelbrotIndex];
+        const normalizedEscape = escapeTime / this.mandelbrot.maxIter;
+        const pitch = Math.round(60 + normalizedEscape * 24);
+        
+        // Map logistic value to velocity and duration
+        const logisticValue = logisticValues[i];
+        const velocity = 0.3 + logisticValue * 0.5;
+        const duration = logisticValue > 0.5 ? 0.5 : 0.25;
+        
+        composition.push({
+          pitch: Math.max(36, Math.min(96, pitch)),
+          duration: duration,
+          time: currentTime,
+          velocity: velocity,
+          sources: {
+            ca: rhythmPattern[i],
+            mandelbrot: escapeTime,
+            logistic: logisticValue
+          }
+        });
+        
+        currentTime += duration;
+      } else {
+        currentTime += 0.25; // Rest duration
+      }
+    }
+    
+    return composition;
+  }
+  
+  // Generate multiple layers with different fractal combinations
+  generateMultiLayerComposition(length, layers = 3) {
+    const composition = {};
+    
+    for (let layer = 0; layer < layers; layer++) {
+      // Use different CA rules for each layer
+      const caRule = [30, 54, 110][layer % 3];
+      const ca = new CellularAutomaton(caRule, 32);
+      
+      // Use different logistic parameters
+      const rValues = [3.2, 3.7, 3.95];
+      const logistic = new LogisticMap(rValues[layer % 3], 0.3 + layer * 0.1);
+      
+      // Generate layer
+      const caPattern = ca.evolve(length).map(gen => gen[Math.floor(gen.length / 2)]);
+      const logisticValues = logistic.generate(length);
+      
+      const layerTrack = [];
+      let time = 0;
+      
+      for (let i = 0; i < length; i++) {
+        if (caPattern[i] === 1) {
+          const pitch = 48 + layer * 12 + Math.round(logisticValues[i] * 12);
+          const duration = 0.5;
+          const velocity = 0.4 + logisticValues[i] * 0.4;
+          
+          layerTrack.push({
+            pitch: Math.max(36, Math.min(96, pitch)),
+            duration: duration,
+            time: time,
+            velocity: velocity,
+            layer: layer
+          });
+        }
+        time += 0.25;
+      }
+      
+      composition[`fractal_layer_${layer}`] = layerTrack;
+    }
+    
+    return composition;
+  }
+}
+
+// Generate complex fractal composition
+const fractalComposer = new FractalComposer();
+const fractalComposition = fractalComposer.generateFractalComposition(24);
+const multiLayerComposition = fractalComposer.generateMultiLayerComposition(32, 3);
+
+console.log('Single-layer fractal composition:', fractalComposition);
+console.log('Multi-layer fractal composition:', multiLayerComposition);
+
+# %% [markdown]
+This exploration of fractals in music demonstrates how mathematical structures can generate complex, organic-sounding compositions. From the rhythmic patterns of cellular automata to the melodic contours of the Mandelbrot set and the dynamic behaviors of chaotic systems, fractals provide composers with powerful tools for creating music that balances mathematical precision with organic complexity. The self-similar nature of fractals ensures that musical structures remain coherent across different time scales while providing endless variation and detail.
+
+# %% [markdown]
+<div class="main-container">
+    <div class="nav-container">
+        <a href="#" class="nav-link">← previous</a>
+        <div class="title">Djalgo's User Guide</div>
+        <a href="#" class="nav-link">next →</a>
+    </div>
+    <div class="toc-container">
+        <ul>
+            <li><a href="#">01. Getting Started</a></li>
+            <li><a href="#">02. Harmonies</a></li>
+            <li><a href="#">03. Loops</a></li>
+            <li><a href="#">04. Minimalism</a></li>
+            <li><a href="#">05. Walks</a></li>
+            <li><a href="#" class="active">> 06. Fractals</a></li>
+            <li><a href="#">07. Genetic algorithms</a></li>
+        </ul>
+    </div>
+    <div class="copyright-container">© Essi Parent 2024</div>
+</div>
+
+# %% [html]
+<style>
+    .main-container {
+        background-color: #fff;
+        overflow: hidden;
+        width: 100%;
+        margin: 0 auto;
+    }
+    .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+    }
+    .copyright-container {
+        font-size: 12px;
+        display: flex;
+        justify-content: flex-end;
+        text-align: right;
+        padding: 15px 20px;
+    }
+    .nav-link {
+        text-decoration: none;
+        color: #333;
+        font-weight: bold;
+    }
+    .title {
+        font-size: 18px;
+        font-weight: bold;
+        text-align: center;
+        flex-grow: 1;
+        margin: 0 20px;
+    }
+    .toc-container {
+        padding: 15px 20px;
+        border-top: 1px solid #ccc;
+    }
+    .toc-container ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    .toc-container li {
+        margin-bottom: 8px;
+    }
+    .toc-container a {
+        text-decoration: none;
+        color: #555;
+    }
+    .toc-container a:hover {
+        text-decoration: underline;
+    }
+    .toc-container a.active {
+        color: #333;
+        font-weight: bold;
+    }
+</style>

@@ -1,0 +1,81 @@
+#%% [markdown]
+# 1. Getting set up
+
+djalgojs is a JavaScript API allowing to compose music with math. It is the successor of the [djalgo Python library](https://gitlab.com/essicolo/djalgo), and a core part of the [jmon ecosystem](https://github.com/jmonlabs). There are three ways of getting started with djalgojs: in the browser without worrying about installations, in a local JavaScript environment for better speed and autonomy, or using cloud-based notebook platforms.
+
+#%% [markdown]
+## 1.1. In a notebook
+
+To use djalgojs in the browser, you can head to [Starboard](https://starboard.gg/), then import djalgojs from the CDN and use it as you intend, maybe following the tutorials with copy and paste. Although djalgojs can be used in [Observable notebooks](https://observablehq.com/@essi/djalgojs), I prefered the less known Starboard because it's great, fully open source and compliant with vanilla JavaScript. With Starboard, code runs directly in your browser without needing a server or fancy, discouraging installations. Since browser sessions might not persist when you close the tab, take care to save your notebooks or copy-paste your code to recover your work later on. To start with djalgojs, import the library and begin creating music. The alias `dj` will be used throughout the documentation for the core library, and `viz` for visualization functions.
+
+# %% [esm]
+import {dj, viz} from "https://cdn.jsdelivr.net/gh/jmonlabs/djalgojsjs@main/dist/djalgojs.js?v=1"
+globalThis.dj = dj;
+globalThis.viz = viz;
+
+#%% [markdown]
+
+JavaScript cells being isolated one another, `globalThis` allows reuse variables elsewhere in the notebook.
+
+## 1.2. With raw html files
+
+To be written.
+
+#%% [markdown]
+## 1.3. In a local JavaScript environment
+
+Not suported yet.
+
+#%% [markdown]
+
+djalgojs is designed to generate musical pieces using JavaScript objects in the specially designed *jmon format*. This format is inspired by Tone.js format, including the musical notes and their synthesis. Althoug you totally can edit synthesis, djalgojs is all about musical notes, not the sound. The format of a mucical piece in djalgojs includes the piece, the tracks of the piece, the notes of the tracks, and three values describing a note: the pitch, the duration, and the time stamp.
+
+JMON EXAMPLE LITTLE STAR
+
+Such objects can be converted to MIDI and WAV thanks to the jmon ecosystem.
+
+#%% [javascript]
+const note = { pitch: 60, duration: 1, time: 0 }; // Middle C, quarter note, starts immediately
+note; // Use globalThis.note = note; to make the note object available eslewhere!
+
+#%% [javascript]
+const track = [
+  { pitch: 60, duration: 1, time: 0 },
+  { pitch: 62, duration: 1, time: 1 },
+  { pitch: 64, duration: 1, time: 2 },
+  { pitch: 65, duration: 1, time: 3 }
+];
+track;
+
+
+#%% [markdown]
+djalgojs offers a range of functionalities designed for music composers and enthusiasts. Here's a snapshot of what djalgojs brings to the table:
+#
+- **Polyloops**: Create complex rhythmic and melodic patterns using circular loop visualizations and multi-layered polyrhythmic structures.
+- **Analysis**: Discover a suite of indices for analyzing musical tracks—whether it's pitches, durations, or timing. These metrics serve not just for analysis, but also as benchmarks for algorithmic composition.
+- **Fractals**: Delve into the beauty of mathematics, extracting music from the intricate patterns of cellular automata, Mandelbrot fractals, and logistic maps.
+- **Genetic Algorithms**: Evolve your music algorithmically, steering compositions towards specific analytical targets and aesthetic goals.
+- **Harmony**: Tools to enrich compositions with scales, chord progressions, and harmonic structures based on music theory.
+- **Minimalism**: Explore minimalist techniques including additive and subtractive processes, inspired by composers like Steve Reich and Arvo Pärt.
+- **Random Walks**: Let music wander through algorithmic paths, guided by various mathematical walking patterns and Gaussian processes.
+- **Gaussian Processes**: Use machine learning techniques for intelligent melody generation and musical prediction.
+- **Rhythm**: Advanced rhythmic pattern generation including Euclidean rhythms and complex polyrhythmic structures.
+- **Visualization**: Real-time plotting and animation capabilities for musical analysis and composition feedback.
+- **Export**: Convert compositions to JMON format for use in professional digital audio workstations and music software.
+
+Let's explore some basic djalgojs functionality
+
+#%% [javascript]
+Object.keys(dj);
+
+#%% [javascript]
+// Create a simple scale using the Scale class
+const scale = new dj.Scale('C', 'major');
+const scaleNotes = scale.generate(4, 8); // 4 notes starting from octave 8
+scaleNotes;
+
+#%% [javascript]
+// Create a simple rhythm pattern
+const rhythm = new dj.Rhythm(4.0); // 4/4 time
+const randomRhythm = rhythm.random({ complexity: 0.5 });
+randomRhythm;

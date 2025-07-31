@@ -1,0 +1,862 @@
+# %% [markdown]
+# 7. Genetic Algorithms
+
+# %% [markdown]
+Genetic algorithms represent one of the most fascinating applications of evolutionary computation to music generation. Inspired by natural selection and evolution, these algorithms can evolve musical phrases, melodies, and compositions toward specific aesthetic goals. In this section, we explore how genetic algorithms can optimize musical sequences using fitness functions based on musical analysis, creating compositions that balance structure with creativity.
+
+# %% [esm]
+import {dj, viz} from "https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js?v=1"
+globalThis.dj = dj;
+globalThis.viz = viz;
+
+# %% [markdown]
+## Genetic Algorithm Fundamentals
+
+# %% [markdown]
+A genetic algorithm operates on a population of candidate solutions (musical phrases) through selection, crossover, and mutation operations. In musical terms, each individual represents a sequence of notes, and the fitness function evaluates how well each sequence meets our musical criteria. Over successive generations, the population evolves toward higher fitness scores.
+
+# %% [javascript]
+// Musical analysis functions (simplified versions of Djalgo analysis tools)
+class MusicalAnalysis {
+  
+  // Gini coefficient for measuring inequality/diversity
+  static gini(values, weights = null) {
+    if (values.length === 0) return 0;
+    
+    if (!weights) {
+      weights = new Array(values.length).fill(1);
+    }
+    
+    // Sort values with their weights
+    const combined = values.map((val, i) => ({value: val, weight: weights[i]}))
+      .sort((a, b) => a.value - b.value);
+    
+    const n = combined.length;
+    let numerator = 0;
+    let denominator = 0;
+    
+    for (let i = 0; i < n; i++) {
+      numerator += (2 * (i + 1) - n - 1) * combined[i].value * combined[i].weight;
+      denominator += combined[i].value * combined[i].weight;
+    }
+    
+    return denominator === 0 ? 0 : Math.abs(numerator) / (n * denominator);
+  }
+  
+  // Balance measurement (center of mass)
+  static balance(values, weights = null) {
+    if (values.length === 0) return 0;
+    
+    if (!weights) {
+      weights = new Array(values.length).fill(1);
+    }
+    
+    let weightedSum = 0;
+    let totalWeight = 0;
+    
+    for (let i = 0; i < values.length; i++) {
+      weightedSum += values[i] * weights[i];
+      totalWeight += weights[i];
+    }
+    
+    const center = totalWeight > 0 ? weightedSum / totalWeight : 0;
+    const midpoint = (Math.max(...values) + Math.min(...values)) / 2;
+    
+    // Return balance as 1 - normalized distance from midpoint
+    const maxDistance = (Math.max(...values) - Math.min(...values)) / 2;
+    return maxDistance > 0 ? 1 - Math.abs(center - midpoint) / maxDistance : 1;
+  }
+  
+  // Motif detection (simple repetition counting)
+  static motif(sequence, motifLength = 3) {
+    if (sequence.length < motifLength * 2) return 0;
+    
+    const motifs = new Map();
+    let totalMotifs = 0;
+    
+    for (let i = 0; i <= sequence.length - motifLength; i++) {
+      const motif = sequence.slice(i, i + motifLength).join(',');
+      motifs.set(motif, (motifs.get(motif) || 0) + 1);
+      totalMotifs++;
+    }
+    
+    // Calculate repetition ratio
+    let repeatedMotifs = 0;
+    for (const count of motifs.values()) {
+      if (count > 1) {
+        repeatedMotifs += count;
+      }
+    }
+    
+    return totalMotifs > 0 ? repeatedMotifs / totalMotifs : 0;
+  }
+  
+  // Dissonance measurement (simplified interval analysis)
+  static dissonance(pitches) {
+    if (pitches.length < 2) return 0;
+    
+    let totalDissonance = 0;
+    let intervalCount = 0;
+    
+    for (let i = 0; i < pitches.length - 1; i++) {
+      const interval = Math.abs(pitches[i + 1] - pitches[i]) % 12;
+      
+      // Consonant intervals (lower dissonance values)
+      const consonanceMap = {
+        0: 0,   // Unison
+        3: 0.3, // Minor third
+        4: 0.2, // Major third
+        5: 0.4, // Perfect fourth
+        7: 0.1, // Perfect fifth
+        8: 0.3, // Minor sixth
+        9: 0.2, // Major sixth
+        12: 0,  // Octave
+      };
+      
+      const dissonanceValue = consonanceMap[interval] || 0.8; // Default high dissonance
+      totalDissonance += dissonanceValue;
+      intervalCount++;
+    }
+    
+    return intervalCount > 0 ? totalDissonance / intervalCount : 0;
+  }
+  
+  // Rhythmic complexity (variation in durations)
+  static rhythmicComplexity(durations) {
+    if (durations.length < 2) return 0;
+    
+    const uniqueDurations = new Set(durations);
+    const varietyRatio = uniqueDurations.size / durations.length;
+    
+    // Calculate entropy-like measure
+    const durationCounts = {};
+    durations.forEach(dur => {
+      durationCounts[dur] = (durationCounts[dur] || 0) + 1;
+    });
+    
+    let entropy = 0;
+    const total = durations.length;
+    for (const count of Object.values(durationCounts)) {
+      const probability = count / total;
+      if (probability > 0) {
+        entropy -= probability * Math.log2(probability);
+      }
+    }
+    
+    // Normalize entropy by maximum possible entropy
+    const maxEntropy = Math.log2(uniqueDurations.size) || 1;
+    return entropy / maxEntropy;
+  }
+}
+
+# %% [markdown]
+## Genetic Algorithm Implementation
+
+# %% [javascript]
+// Individual represents a musical phrase
+class MusicalIndividual {
+  constructor(sequence = null, length = 16) {
+    if (sequence) {
+      this.sequence = [...sequence]; // Copy the sequence
+    } else {
+      this.sequence = this.generateRandomSequence(length);
+    }
+    this.fitness = 0;
+  }
+  
+  generateRandomSequence(length) {
+    const sequence = [];
+    const possiblePitches = [60, 62, 64, 65, 67, 69, 71, 72]; // C major scale
+    const possibleDurations = [0.25, 0.5, 1.0, 2.0];
+    
+    let currentTime = 0;
+    for (let i = 0; i < length; i++) {
+      const pitch = possiblePitches[Math.floor(Math.random() * possiblePitches.length)];
+      const duration = possibleDurations[Math.floor(Math.random() * possibleDurations.length)];
+      
+      sequence.push({
+        pitch: pitch,
+        duration: duration,
+        time: currentTime
+      });
+      
+      currentTime += duration;
+    }
+    
+    return sequence;
+  }
+  
+  // Calculate fitness based on multiple musical indices
+  calculateFitness(targets = {}) {
+    const pitches = this.sequence.map(note => note.pitch);
+    const durations = this.sequence.map(note => note.duration);
+    const times = this.sequence.map(note => note.time);
+    
+    // Calculate various musical metrics
+    const metrics = {
+      pitchGini: MusicalAnalysis.gini(pitches),
+      durationGini: MusicalAnalysis.gini(durations),
+      pitchBalance: MusicalAnalysis.balance(pitches, durations),
+      motifScore: MusicalAnalysis.motif(pitches, 3),
+      dissonance: MusicalAnalysis.dissonance(pitches),
+      rhythmicComplexity: MusicalAnalysis.rhythmicComplexity(durations)
+    };
+    
+    // Calculate fitness as weighted distance from targets
+    const defaultTargets = {
+      pitchGini: 0.5,
+      durationGini: 0.6,
+      pitchBalance: 0.7,
+      motifScore: 0.3,
+      dissonance: 0.4,
+      rhythmicComplexity: 0.5
+    };
+    
+    const actualTargets = {...defaultTargets, ...targets};
+    
+    let totalDistance = 0;
+    let weightSum = 0;
+    
+    for (const [metric, target] of Object.entries(actualTargets)) {
+      if (metrics[metric] !== undefined) {
+        const distance = Math.abs(metrics[metric] - target);
+        const weight = 1.0; // Could be customized per metric
+        totalDistance += distance * weight;
+        weightSum += weight;
+      }
+    }
+    
+    // Fitness is inverse of average distance (higher is better)
+    this.fitness = weightSum > 0 ? 1 - (totalDistance / weightSum) : 0;
+    this.metrics = metrics;
+    
+    return this.fitness;
+  }
+  
+  // Create a copy of this individual
+  clone() {
+    return new MusicalIndividual(this.sequence);
+  }
+  
+  // Mutate the individual
+  mutate(mutationRate = 0.1, pitchRange = 7, durationOptions = [0.25, 0.5, 1.0, 2.0]) {
+    const mutated = this.clone();
+    
+    mutated.sequence.forEach((note, index) => {
+      if (Math.random() < mutationRate) {
+        // Mutate pitch
+        if (Math.random() < 0.5) {
+          const change = Math.floor(Math.random() * (pitchRange * 2 + 1)) - pitchRange;
+          note.pitch = Math.max(36, Math.min(96, note.pitch + change));
+        }
+        
+        // Mutate duration
+        if (Math.random() < 0.5) {
+          note.duration = durationOptions[Math.floor(Math.random() * durationOptions.length)];
+        }
+      }
+    });
+    
+    // Recalculate times after mutation
+    let currentTime = 0;
+    mutated.sequence.forEach(note => {
+      note.time = currentTime;
+      currentTime += note.duration;
+    });
+    
+    return mutated;
+  }
+}
+
+# %% [markdown]
+## Darwin Evolution Engine
+
+# %% [javascript]
+// Main genetic algorithm engine
+class Darwin {
+  constructor(config = {}) {
+    this.populationSize = config.populationSize || 50;
+    this.mutationRate = config.mutationRate || 0.15;
+    this.crossoverRate = config.crossoverRate || 0.7;
+    this.elitismCount = config.elitismCount || 5;
+    this.sequenceLength = config.sequenceLength || 16;
+    this.targets = config.targets || {};
+    
+    this.population = [];
+    this.generation = 0;
+    this.bestFitness = 0;
+    this.averageFitness = 0;
+    this.history = [];
+    
+    this.initializePopulation();
+  }
+  
+  initializePopulation() {
+    this.population = [];
+    for (let i = 0; i < this.populationSize; i++) {
+      const individual = new MusicalIndividual(null, this.sequenceLength);
+      individual.calculateFitness(this.targets);
+      this.population.push(individual);
+    }
+    
+    this.updateStatistics();
+  }
+  
+  updateStatistics() {
+    const fitnesses = this.population.map(ind => ind.fitness);
+    this.bestFitness = Math.max(...fitnesses);
+    this.averageFitness = fitnesses.reduce((a, b) => a + b, 0) / fitnesses.length;
+  }
+  
+  // Tournament selection
+  tournamentSelection(tournamentSize = 3) {
+    const tournament = [];
+    for (let i = 0; i < tournamentSize; i++) {
+      const randomIndex = Math.floor(Math.random() * this.population.length);
+      tournament.push(this.population[randomIndex]);
+    }
+    
+    return tournament.reduce((best, current) => 
+      current.fitness > best.fitness ? current : best
+    );
+  }
+  
+  // Single-point crossover
+  crossover(parent1, parent2) {
+    if (Math.random() > this.crossoverRate) {
+      return [parent1.clone(), parent2.clone()];
+    }
+    
+    const crossoverPoint = Math.floor(Math.random() * parent1.sequence.length);
+    
+    const child1 = parent1.clone();
+    const child2 = parent2.clone();
+    
+    // Swap segments after crossover point
+    for (let i = crossoverPoint; i < parent1.sequence.length; i++) {
+      child1.sequence[i] = {...parent2.sequence[i]};
+      child2.sequence[i] = {...parent1.sequence[i]};
+    }
+    
+    // Recalculate times for both children
+    [child1, child2].forEach(child => {
+      let currentTime = 0;
+      child.sequence.forEach(note => {
+        note.time = currentTime;
+        currentTime += note.duration;
+      });
+    });
+    
+    return [child1, child2];
+  }
+  
+  // Evolve one generation
+  evolve() {
+    // Sort population by fitness (descending)
+    this.population.sort((a, b) => b.fitness - a.fitness);
+    
+    const newPopulation = [];
+    
+    // Elitism: keep best individuals
+    for (let i = 0; i < this.elitismCount; i++) {
+      newPopulation.push(this.population[i].clone());
+    }
+    
+    // Generate offspring
+    while (newPopulation.length < this.populationSize) {
+      const parent1 = this.tournamentSelection();
+      const parent2 = this.tournamentSelection();
+      
+      const [child1, child2] = this.crossover(parent1, parent2);
+      
+      // Mutate children
+      const mutatedChild1 = child1.mutate(this.mutationRate);
+      const mutatedChild2 = child2.mutate(this.mutationRate);
+      
+      // Calculate fitness for children
+      mutatedChild1.calculateFitness(this.targets);
+      mutatedChild2.calculateFitness(this.targets);
+      
+      newPopulation.push(mutatedChild1);
+      if (newPopulation.length < this.populationSize) {
+        newPopulation.push(mutatedChild2);
+      }
+    }
+    
+    this.population = newPopulation;
+    this.generation++;
+    this.updateStatistics();
+    
+    // Record history
+    this.history.push({
+      generation: this.generation,
+      bestFitness: this.bestFitness,
+      averageFitness: this.averageFitness,
+      bestIndividual: this.population[0].clone()
+    });
+    
+    return this.population[0]; // Return best individual
+  }
+  
+  // Run evolution for multiple generations
+  run(generations) {
+    const results = [];
+    
+    for (let i = 0; i < generations; i++) {
+      const best = this.evolve();
+      results.push({
+        generation: this.generation,
+        fitness: best.fitness,
+        metrics: best.metrics,
+        sequence: best.sequence
+      });
+      
+      // Log progress every 10 generations
+      if (this.generation % 10 === 0) {
+        console.log(`Generation ${this.generation}: Best fitness = ${best.fitness.toFixed(4)}`);
+      }
+    }
+    
+    return results;
+  }
+  
+  // Get the best individual from current population
+  getBest() {
+    this.population.sort((a, b) => b.fitness - a.fitness);
+    return this.population[0];
+  }
+}
+
+# %% [markdown]
+## Evolution Examples
+
+# %% [markdown]
+Let's create a genetic algorithm that evolves musical phrases toward specific aesthetic goals. We'll define target values for various musical indices and watch as the algorithm evolves increasingly fit musical sequences.
+
+# %% [javascript]
+// Example 1: Evolve toward balanced, moderately complex music
+console.log('=== Evolution Example 1: Balanced Composition ===');
+
+const balancedTargets = {
+  pitchGini: 0.4,           // Moderate pitch diversity
+  durationGini: 0.5,        // Good rhythmic variety
+  pitchBalance: 0.8,        // Well-balanced melodic contour
+  motifScore: 0.4,          // Some repetition for coherence
+  dissonance: 0.3,          // Mostly consonant
+  rhythmicComplexity: 0.6   // Moderate rhythmic complexity
+};
+
+const darwin1 = new Darwin({
+  populationSize: 30,
+  mutationRate: 0.12,
+  sequenceLength: 12,
+  targets: balancedTargets
+});
+
+// Evolve for 50 generations
+const evolution1 = darwin1.run(50);
+const best1 = darwin1.getBest();
+
+console.log('Best individual metrics:', best1.metrics);
+console.log('Best sequence:', best1.sequence.map(note => 
+  `${note.pitch}(${note.duration})`
+).join(' '));
+
+# %% [markdown]
+### Chaotic Evolution
+
+# %% [javascript]
+// Example 2: Evolve toward more chaotic, unpredictable music
+console.log('\n=== Evolution Example 2: Chaotic Composition ===');
+
+const chaoticTargets = {
+  pitchGini: 0.8,           // High pitch diversity
+  durationGini: 0.9,        // Very varied rhythms
+  pitchBalance: 0.2,        // Unbalanced, more dramatic
+  motifScore: 0.1,          // Minimal repetition
+  dissonance: 0.7,          // More dissonant
+  rhythmicComplexity: 0.9   // High rhythmic complexity
+};
+
+const darwin2 = new Darwin({
+  populationSize: 30,
+  mutationRate: 0.2,  // Higher mutation rate for chaos
+  sequenceLength: 14,
+  targets: chaoticTargets
+});
+
+const evolution2 = darwin2.run(40);
+const best2 = darwin2.getBest();
+
+console.log('Chaotic composition metrics:', best2.metrics);
+console.log('Chaotic sequence:', best2.sequence.map(note => 
+  `${note.pitch}(${note.duration})`
+).join(' '));
+
+# %% [markdown]
+### Minimalist Evolution
+
+# %% [javascript]
+// Example 3: Evolve toward minimalist, repetitive music
+console.log('\n=== Evolution Example 3: Minimalist Composition ===');
+
+const minimalistTargets = {
+  pitchGini: 0.2,           // Low pitch diversity
+  durationGini: 0.3,        // Simple rhythms
+  pitchBalance: 0.6,        // Moderately balanced
+  motifScore: 0.8,          // High repetition
+  dissonance: 0.1,          // Very consonant
+  rhythmicComplexity: 0.2   // Simple rhythmic patterns
+};
+
+const darwin3 = new Darwin({
+  populationSize: 25,
+  mutationRate: 0.08,  // Lower mutation rate for stability
+  sequenceLength: 10,
+  targets: minimalistTargets
+});
+
+const evolution3 = darwin3.run(60);
+const best3 = darwin3.getBest();
+
+console.log('Minimalist composition metrics:', best3.metrics);
+console.log('Minimalist sequence:', best3.sequence.map(note => 
+  `${note.pitch}(${note.duration})`
+).join(' '));
+
+# %% [markdown]
+## Multi-Objective Evolution
+
+# %% [markdown]
+Sometimes we want to evolve multiple different types of musical sequences simultaneously, or evolve toward multiple conflicting objectives. We can modify our genetic algorithm to maintain diversity in the population and explore different areas of the musical fitness landscape.
+
+# %% [javascript]
+// Advanced Darwin with species/niching
+class AdvancedDarwin extends Darwin {
+  constructor(config = {}) {
+    super(config);
+    this.speciesCount = config.speciesCount || 3;
+    this.nichingDistance = config.nichingDistance || 0.3;
+  }
+  
+  // Calculate distance between two individuals based on their metrics
+  calculateDistance(ind1, ind2) {
+    if (!ind1.metrics || !ind2.metrics) return 1;
+    
+    const metrics1 = ind1.metrics;
+    const metrics2 = ind2.metrics;
+    
+    let totalDistance = 0;
+    let metricCount = 0;
+    
+    for (const metric in metrics1) {
+      if (metrics2[metric] !== undefined) {
+        totalDistance += Math.abs(metrics1[metric] - metrics2[metric]);
+        metricCount++;
+      }
+    }
+    
+    return metricCount > 0 ? totalDistance / metricCount : 1;
+  }
+  
+  // Species-based selection to maintain diversity
+  speciesSelection() {
+    // Sort by fitness
+    this.population.sort((a, b) => b.fitness - a.fitness);
+    
+    const species = [];
+    const assigned = new Set();
+    
+    // Create species based on similarity
+    for (let i = 0; i < this.population.length; i++) {
+      if (assigned.has(i)) continue;
+      
+      const newSpecies = [i];
+      assigned.add(i);
+      
+      for (let j = i + 1; j < this.population.length; j++) {
+        if (assigned.has(j)) continue;
+        
+        const distance = this.calculateDistance(
+          this.population[i], 
+          this.population[j]
+        );
+        
+        if (distance < this.nichingDistance) {
+          newSpecies.push(j);
+          assigned.add(j);
+        }
+      }
+      
+      species.push(newSpecies);
+    }
+    
+    return species;
+  }
+  
+  // Multi-objective evolution
+  evolveMultiObjective() {
+    const species = this.speciesSelection();
+    const newPopulation = [];
+    
+    // Allocate reproduction slots to each species
+    const speciesSlots = Math.floor(this.populationSize / species.length);
+    
+    species.forEach((speciesIndices, speciesIndex) => {
+      const speciesPopulation = speciesIndices.map(i => this.population[i]);
+      
+      // Keep best individual from each species
+      newPopulation.push(speciesPopulation[0].clone());
+      
+      // Generate offspring for this species
+      const slotsForSpecies = Math.min(speciesSlots, this.populationSize - newPopulation.length);
+      
+      for (let i = 1; i < slotsForSpecies; i++) {
+        // Select parents from within species
+        const parent1 = speciesPopulation[Math.floor(Math.random() * speciesPopulation.length)];
+        const parent2 = speciesPopulation[Math.floor(Math.random() * speciesPopulation.length)];
+        
+        const [child1] = this.crossover(parent1, parent2);
+        const mutatedChild = child1.mutate(this.mutationRate);
+        mutatedChild.calculateFitness(this.targets);
+        
+        newPopulation.push(mutatedChild);
+      }
+    });
+    
+    // Fill remaining slots with random individuals if needed
+    while (newPopulation.length < this.populationSize) {
+      const individual = new MusicalIndividual(null, this.sequenceLength);
+      individual.calculateFitness(this.targets);
+      newPopulation.push(individual);
+    }
+    
+    this.population = newPopulation;
+    this.generation++;
+    this.updateStatistics();
+    
+    return {
+      species: species.length,
+      population: this.population.slice().sort((a, b) => b.fitness - a.fitness)
+    };
+  }
+}
+
+# %% [javascript]
+// Multi-objective evolution example
+console.log('\n=== Multi-Objective Evolution ===');
+
+const advancedDarwin = new AdvancedDarwin({
+  populationSize: 40,
+  mutationRate: 0.15,
+  sequenceLength: 12,
+  speciesCount: 4,
+  targets: balancedTargets
+});
+
+// Run multi-objective evolution
+const diverseResults = [];
+for (let i = 0; i < 30; i++) {
+  const result = advancedDarwin.evolveMultiObjective();
+  
+  if (i % 10 === 0) {
+    console.log(`Generation ${i}: ${result.species} species, best fitness: ${result.population[0].fitness.toFixed(4)}`);
+  }
+  
+  diverseResults.push(result);
+}
+
+// Show diverse results
+const finalPopulation = advancedDarwin.population
+  .sort((a, b) => b.fitness - a.fitness)
+  .slice(0, 5); // Top 5 individuals
+
+console.log('\nTop 5 diverse individuals:');
+finalPopulation.forEach((individual, index) => {
+  console.log(`Individual ${index + 1}:`);
+  console.log(`  Fitness: ${individual.fitness.toFixed(4)}`);
+  console.log(`  Metrics:`, Object.entries(individual.metrics)
+    .map(([key, value]) => `${key}: ${value.toFixed(3)}`)
+    .join(', '));
+  console.log(`  Sequence: ${individual.sequence.map(n => `${n.pitch}(${n.duration})`).join(' ')}`);
+});
+
+# %% [markdown]
+## Evolutionary Composition Strategies
+
+# %% [markdown]
+Beyond basic evolution, we can use sophisticated strategies like co-evolution, where multiple populations evolve together, or interactive evolution, where human feedback guides the fitness function.
+
+# %% [javascript]
+// Co-evolution example: evolve melody and harmony together
+class CoEvolutionSystem {
+  constructor() {
+    this.melodyPopulation = new Darwin({
+      populationSize: 20,
+      sequenceLength: 8,
+      targets: {
+        pitchGini: 0.6,
+        pitchBalance: 0.7,
+        motifScore: 0.4
+      }
+    });
+    
+    this.harmonyPopulation = new Darwin({
+      populationSize: 20,
+      sequenceLength: 8,
+      targets: {
+        dissonance: 0.2,
+        pitchBalance: 0.8,
+        rhythmicComplexity: 0.3
+      }
+    });
+  }
+  
+  // Evaluate how well melody and harmony work together
+  evaluateHarmony(melody, harmony) {
+    let harmonyScore = 0;
+    let evaluations = 0;
+    
+    // Check consonance between simultaneous notes
+    melody.sequence.forEach((melodyNote, i) => {
+      const harmonyNote = harmony.sequence[i % harmony.sequence.length];
+      if (harmonyNote) {
+        const interval = Math.abs(melodyNote.pitch - harmonyNote.pitch) % 12;
+        const consonance = {
+          0: 1.0, 3: 0.8, 4: 0.9, 5: 0.6, 7: 1.0, 8: 0.8, 9: 0.9
+        }[interval] || 0.3;
+        
+        harmonyScore += consonance;
+        evaluations++;
+      }
+    });
+    
+    return evaluations > 0 ? harmonyScore / evaluations : 0;
+  }
+  
+  // Co-evolve both populations
+  coEvolve(generations) {
+    const results = [];
+    
+    for (let gen = 0; gen < generations; gen++) {
+      // Evolve melody population
+      this.melodyPopulation.evolve();
+      
+      // Evolve harmony population  
+      this.harmonyPopulation.evolve();
+      
+      // Evaluate best combinations
+      const bestMelody = this.melodyPopulation.getBest();
+      const bestHarmony = this.harmonyPopulation.getBest();
+      
+      const harmonyScore = this.evaluateHarmony(bestMelody, bestHarmony);
+      
+      results.push({
+        generation: gen,
+        melodyFitness: bestMelody.fitness,
+        harmonyFitness: bestHarmony.fitness,
+        harmonyScore: harmonyScore,
+        melody: bestMelody.sequence,
+        harmony: bestHarmony.sequence
+      });
+      
+      if (gen % 10 === 0) {
+        console.log(`Co-evolution Gen ${gen}: Melody=${bestMelody.fitness.toFixed(3)}, Harmony=${bestHarmony.fitness.toFixed(3)}, Together=${harmonyScore.toFixed(3)}`);
+      }
+    }
+    
+    return results;
+  }
+}
+
+// Run co-evolution
+console.log('\n=== Co-Evolution Example ===');
+const coEvolution = new CoEvolutionSystem();
+const coResults = coEvolution.coEvolve(30);
+
+const finalResult = coResults[coResults.length - 1];
+console.log('\nFinal co-evolved composition:');
+console.log('Melody:', finalResult.melody.map(n => `${n.pitch}(${n.duration})`).join(' '));
+console.log('Harmony:', finalResult.harmony.map(n => `${n.pitch}(${n.duration})`).join(' '));
+console.log(`Combined harmony score: ${finalResult.harmonyScore.toFixed(3)}`);
+
+# %% [markdown]
+This exploration of genetic algorithms in music demonstrates how evolutionary computation can create sophisticated musical compositions that balance multiple aesthetic criteria. From simple fitness-driven evolution to complex multi-objective and co-evolutionary systems, genetic algorithms provide composers with powerful tools for exploring vast musical possibility spaces while maintaining coherent aesthetic goals. The ability to evolve toward specific musical characteristics makes genetic algorithms particularly valuable for style-specific composition and for discovering novel musical patterns that satisfy complex artistic criteria.
+
+# %% [markdown]
+<div class="main-container">
+    <div class="nav-container">
+        <a href="#" class="nav-link">← previous</a>
+        <div class="title">Djalgo's User Guide</div>
+        <a href="#" class="nav-link">next →</a>
+    </div>
+    <div class="toc-container">
+        <ul>
+            <li><a href="#">01. Getting Started</a></li>
+            <li><a href="#">02. Harmonies</a></li>
+            <li><a href="#">03. Loops</a></li>
+            <li><a href="#">04. Minimalism</a></li>
+            <li><a href="#">05. Walks</a></li>
+            <li><a href="#">06. Fractals</a></li>
+            <li><a href="#" class="active">> 07. Genetic algorithms</a></li>
+        </ul>
+    </div>
+    <div class="copyright-container">© Essi Parent 2024</div>
+</div>
+
+# %% [html]
+<style>
+    .main-container {
+        background-color: #fff;
+        overflow: hidden;
+        width: 100%;
+        margin: 0 auto;
+    }
+    .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+    }
+    .copyright-container {
+        font-size: 12px;
+        display: flex;
+        justify-content: flex-end;
+        text-align: right;
+        padding: 15px 20px;
+    }
+    .nav-link {
+        text-decoration: none;
+        color: #333;
+        font-weight: bold;
+    }
+    .title {
+        font-size: 18px;
+        font-weight: bold;
+        text-align: center;
+        flex-grow: 1;
+        margin: 0 20px;
+    }
+    .toc-container {
+        padding: 15px 20px;
+        border-top: 1px solid #ccc;
+    }
+    .toc-container ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    .toc-container li {
+        margin-bottom: 8px;
+    }
+    .toc-container a {
+        text-decoration: none;
+        color: #555;
+    }
+    .toc-container a:hover {
+        text-decoration: underline;
+    }
+    .toc-container a.active {
+        color: #333;
+        font-weight: bold;
+    }
+</style>

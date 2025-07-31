@@ -1,0 +1,473 @@
+# %% [markdown]
+# <div class="main-container">
+#     <div class="nav-container">
+#         <a href="#" class="nav-link">← previous</a>
+#         <div class="title">Djalgo's User Guide</div>
+#         <a href="#" class="nav-link">next →</a>
+#     </div>
+# </div>
+
+# %% [markdown]
+# # 3. Loops
+#
+# Let's delve into a technique centred around numbers, but essentially visual, steering clear of mathematical functions. Multilevel rhythms in music and mathematics are about orchestrating beats, durations, and accents across various tiers or facets of a composition or sequence. These rhythmic patterns often manifest as polygons nestled within a circle, symbolizing the loop's periodic nature. I've coined the term polyloops for these looping polygons (poly) to capture the essence of looping multiple shapes. Imagine a radar plot, as depicted in the next figure, that emits a beep each time a rotating line intersects a point on the circle's perimeter. This setup allows us to: (1) introduce any number of points, (2) layer multiple polygons, each associated with a distinct instrument, (3) create triggered notes with tailored pitches and durations, and (4) adjust the rotation's velocity to our liking.
+#
+# <center>
+# <svg class="lucide lucide-rotate-cw" width="240" height="240" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" version="1.1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+#  <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" stroke-width=".75591"/>
+#  <path d="m21 5v3h-3" stroke-width=".75591"/>
+#  <g fill="#fff" stroke-width=".75591">
+#   <path d="m7.8041 8.0197 5.0662-2.5582 5.317 8.6276-5.8688 4.4643-6.5209-6.4707z"/>
+#   <circle cx="12.656" cy="5.7148" r="1.5858"/>
+#   <circle cx="17.563" cy="14.033" r="1.5858"/>
+#   <circle cx="11.998" cy="18.281" r="1.5858"/>
+#   <circle cx="6.1337" cy="12.178" r="1.5858"/>
+#   <circle cx="7.9888" cy="7.3903" r="1.5858"/>
+#  </g>
+#  <circle cx="11.992" cy="12.008" r="1.5858" fill="#000" stroke="none"/>
+#  <path d="m20.462 10.003-8.274 1.9316" stroke-width=".75591"/>
+# </svg>
+# </center>
+
+# %% [markdown]
+# In Djalgo, we represent each polyloop as a layer of points in a circular arrangement, where each point is defined by its angle, radius, pitch, and whether it's active. A first polyloop might cover the basic rhythmic pattern of a loop. A second, as another layer of rhythms, and a third that leans towards the melodic side. The latter polyloop could incorporate varying pitches, adding a melodic layer to our rhythmic foundation. By carefully selecting the timing, we can craft a composition that not only has rhythmic interest but also melodic movement.
+
+# %% [markdown]
+# The concept of pulses is fundamental to understanding the structuring of rhythms within a measure. These pulses act like the ticks of a metronome, providing a temporal grid to which musical events can be aligned. In the context of our polyloops, each pulse represents a potential moment for a note to be triggered, with a granularity of 0.25 beats. This granularity divides a measure, or period, of 4 beats into 16 discrete pulses, offering a precise framework for rhythm creation.
+# 
+# Given that each angle within a polyloop corresponds to a specific pulse and all such numbers are constrained to be less than the full circle (360 degrees), we have a clear and structured approach to rhythm design. This method ensures that all rhythmic events occur within the confines of a single measure, looping back at the end of each cycle.
+
+# %% [esm]
+import {dj, viz} from "https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js?v=1"
+globalThis.dj = dj;
+globalThis.viz = viz;
+
+# %% [javascript]
+// Create polyloops using the JavaScript API
+const polyloop0Layer = dj.Polyloop.fromRhythm(
+  [1.0, 0.5, 0.5, 1.0], // durations
+  [48, 50, 60, 52], // pitches
+  {
+    instrument: 'bass',
+    color: 'red',
+    label: 'Polyloop 0',
+    speed: 1,
+    radius: 0.4
+  }
+);
+
+const polyloop1Layer = dj.Polyloop.fromRhythm(
+  [1.0, 0, 1.0, 0.5], // durations (0 means rest)
+  [67, 0, 69, 62], // pitches (0 for rest)
+  {
+    instrument: 'lead',
+    color: 'blue', 
+    label: 'Polyloop 1',
+    speed: 1,
+    radius: 0.6
+  }
+);
+
+const polyloop2Layer = dj.Polyloop.fromRhythm(
+  [0.25, 0.25, 0.25, 0.5, 0.25, 0.25, 0.5, 1.0], // more complex rhythm
+  [72, 79, 81, 74, 60, 79, 84, 72], // pitches
+  {
+    instrument: 'melody',
+    color: 'green',
+    label: 'Polyloop 2', 
+    speed: 1,
+    radius: 0.8
+  }
+);
+
+// Create the main polyloop with all layers
+const polyloopConfig = {
+  layers: [polyloop0Layer, polyloop1Layer, polyloop2Layer],
+  bpm: 120,
+  timeSignature: [4, 4],
+  measures: 1
+};
+
+const pl0 = new dj.Polyloop(polyloopConfig);
+
+console.log('Created polyloop with layers:', pl0.getVisualizationState().layers.map(l => l.label));
+
+# %% [markdown]
+# At the end of the previous block, all the polyloop layers are combined into a single `Polyloop` object, along with the BPM and time signature. The `Polyloop` object automatically manages the timing and has several key methods: `generateSequence()` creates note triggers over time, `plot()` creates a visualization of the polyloops, and `toJMonSequences()` exports the music for use in digital audio workstations.
+#
+# Visualizing polyloops in a radar plot is an excellent way to understand and appreciate the complexity and beauty of your rhythmic and melodic constructions, allowing you to appreciate the structured arrangement of angles, durations, and accents within the measure. This visualization can be particularly helpful for analyzing the interplay between different polyloops and for refining the composition by making adjustments based on the visual feedback.
+#
+# To use the `plot()` method, you can optionally provide visualization parameters. The method creates an interactive circular visualization showing the polyloop layers.
+#
+# In Starboard notebooks, you can display the visualization directly by calling the plot method.
+
+# %% [javascript]
+// Generate and display the polyloop visualization
+pl0.plot()
+
+# %% [markdown]
+# The plot shows the structure of the loop in terms of angles and active points. The pitch information is purposely encoded in the point colors to prevent the plot from becoming too cluttered. The polyloops are displayed starting from the innermost loop, featuring the shortest radius, progressing outward to the final loop according to the order in the layers array. Each layer's shape is delineated by connected points to represent its structure. For instance, polyloop 0, which has four evenly spaced points, forms a polygon that appears as a square. Since the four segments are equal, this loop is said to be *Euclidean*. The active points are shown as filled circles, with lines connecting them to show the flow. Upon closer inspection, you might notice that some points appear at similar angles, indicating moments where notes from different layers might overlap. While this overlap is intentional, it's worth noting that traditional western music notation sometimes struggles to accurately represent such overlapping notes. We might correct that manually. I'd also like to make polyloop0 to be less Euclidean.
+
+# %% [javascript]
+// Let's create a corrected version with less Euclidean spacing and no overlaps
+const correctedPolyloop1Layer = dj.Polyloop.fromRhythm(
+  [1.0, 0, 1.0, 0.5], // Keep the same rhythm
+  [67, 0, 69, 62], // Same pitches
+  {
+    instrument: 'lead',
+    color: 'blue',
+    label: 'Polyloop 1 (corrected)',
+    speed: 1,
+    radius: 0.6
+  }
+);
+
+// Less Euclidean rhythm for polyloop0
+const correctedPolyloop0Layer = dj.Polyloop.fromRhythm(
+  [1.0, 0.25, 0.5, 1.0], // Less regular spacing
+  [48, 50, 60, 52], // Same pitches
+  {
+    instrument: 'bass',
+    color: 'red', 
+    label: 'Polyloop 0 (less Euclidean)',
+    speed: 1,
+    radius: 0.4
+  }
+);
+
+// Create the corrected polyloop
+const correctedPolyloopConfig = {
+  layers: [correctedPolyloop0Layer, correctedPolyloop1Layer, polyloop2Layer],
+  bpm: 120,
+  timeSignature: [4, 4],
+  measures: 1
+};
+
+const pl1 = new dj.Polyloop(correctedPolyloopConfig);
+
+# %% [markdown]
+# The last aspect of polyloops, as mentioned earlier, was its speed. We define the tempo as BPM (beats per minute) in the polyloop configuration. To play the musical composition, we can generate a sequence of note triggers and convert them to various formats.
+
+# %% [javascript]
+// Generate and play the sequence
+const triggers = pl1.generateSequence(4); // Generate 4 beats worth of triggers
+console.log(`Generated ${triggers.length} triggers over 4 beats`);
+
+// Show first few triggers
+triggers.slice(0, 10).forEach(trigger => {
+  console.log(`Time: ${trigger.time.toFixed(2)}, Layer: ${trigger.layer}, Pitch: ${trigger.point.pitch}`);
+});
+
+// Convert to JMON sequences for export to MIDI/DAW
+const jmonSequences = pl1.toJMonSequences(4);
+console.log('JMON Sequences created:');
+jmonSequences.forEach(seq => {
+  console.log(`- ${seq.label}: ${seq.notes.length} notes`);
+});
+
+# %% [markdown]
+# Once a loop is created, repetitions are usually desired. For this purpose, you can generate longer sequences by specifying more beats, or you can extend the polyloop by repeating the pattern. The JMON sequences can be exported to MIDI and then imported into a DAW, where you can copy-paste the MIDI blocks or use loop widgets. You can also extend the pattern programmatically in JavaScript before exportation.
+
+# %% [javascript]
+// Create an extended version with multiple repetitions
+const extendedTriggers = pl1.generateSequence(16); // 16 beats = 4 measures
+console.log(`Extended sequence has ${extendedTriggers.length} triggers over 16 beats`);
+
+// Create extended JMON sequences
+const extendedJmonSequences = pl1.toJMonSequences(16);
+console.log('Extended JMON sequences:');
+extendedJmonSequences.forEach(seq => {
+  console.log(`- ${seq.label}: ${seq.notes.length} notes`);
+});
+
+# %% [markdown]
+# ### Many polyloops
+#
+# You can generate as many polyloops as desired. Polyloops can be stacked horizontally (along time), or vertically (multiple layers). Interestingly, vertically stacked polyloops with different periodicities can create unpredictable patterns. In the following code block, a polyloop with different layer speeds is created to demonstrate polyrhythmic patterns.
+
+# %% [javascript]
+// Create a second polyloop with different characteristics
+const layer1 = dj.Polyloop.fromRhythm(
+  [1.0, 0.5, 0.5, 1.0, 0.5, 1.0], // 6-beat pattern
+  [36, 41, 48, 40, 43, 48],
+  {
+    instrument: 'bass_drum',
+    color: 'purple',
+    label: 'Bass Pattern',
+    speed: 1,
+    radius: 0.3
+  }
+);
+
+const layer2 = dj.Polyloop.fromRhythm(
+  [0.25, 1.0, 2.0, 1.0], // Different rhythm
+  [96, 95, 89, 84],
+  {
+    instrument: 'bells',
+    color: 'cyan',
+    label: 'Bell Pattern', 
+    speed: 1,
+    radius: 0.5
+  }
+);
+
+const layer3 = dj.Polyloop.fromRhythm(
+  [0.25, 0.25, 0.25, 0.25, 2.0, 1.0, 0.25, 0.25, 0.25, 0.25], // Complex pattern
+  [60, 62, 64, 65, 67, 69, 60, 62, 64, 72],
+  {
+    instrument: 'melody',
+    color: 'orange',
+    label: 'Melodic Pattern',
+    speed: 1,
+    radius: 0.7
+  }
+);
+
+const pl2Config = {
+  layers: [layer1, layer2, layer3],
+  bpm: 180, // Faster tempo
+  timeSignature: [4, 4],
+  measures: 1
+};
+
+const pl2 = new dj.Polyloop(pl2Config);
+
+// Display the visualization
+pl2.plot()
+
+# %% [markdown]
+# The following example demonstrates how different polyloops can be combined. Notice how the layers interact at different speeds and create complex polyrhythmic patterns. The visualization shows how the different layers create intricate relationships as they rotate at their respective speeds.
+
+# %% [javascript]
+// Generate sequences from both polyloops
+const pl2Sequences = pl2.generateSequence(8);
+console.log(`Second polyloop generated ${pl2Sequences.length} triggers over 8 beats`);
+
+// Combine sequences from both polyloops if desired
+const combinedTriggers = [
+  ...pl1.generateSequence(8).map(t => ({...t, source: 'pl1'})),
+  ...pl2.generateSequence(8).map(t => ({...t, source: 'pl2'}))
+];
+
+console.log(`Combined sequences have ${combinedTriggers.length} total triggers`);
+
+# %% [markdown]
+# ## Signal analysis
+#
+# Signal analysis will reveal its full potential when introducing genetic algorithms in future modules. But since our focus is loops, we can analyze some attributes of our polyloop compositions using mathematical measures.
+
+# %% [markdown]
+# ### Well-formedness as loop inequalities
+#
+# In music theory, well-formedness refers to the coherence and structural integrity of musical compositions according to specific compositional principles and conventions. It encompasses how elements such as melody, harmony, rhythm, and form are organized and developed in a way that is considered orderly, logical, and aesthetically pleasing within the context of the musical style or genre being analyzed. Well-formedness is not a singular, quantifiable attribute but rather a qualitative assessment of music's adherence to established musical norms and patterns, which can vary across different cultural and historical contexts. Well-formedness can nonetheless be assessed quantitatively.
+#
+# The Gini index is a measure of statistical dispersion intended to represent the income or wealth distribution, but can be adapted to measure the diversity or inequality of any set of quantitative values, including angles, pitches and durations of musical notes. The Gini index ranges from 0 to 1, where 0 signifies perfect equality (for instance, all note durations are the same) and 1 signifies maximal inequality (for instance, one note has all the duration). 
+#
+# In JavaScript, we can implement the Gini coefficient calculation for our polyloop analysis.
+
+# %% [javascript]
+// Utility function to calculate Gini coefficient
+function calculateGini(values, weights = null) {
+  if (values.length === 0) return 0;
+  
+  // If no weights provided, use equal weights
+  if (!weights) {
+    weights = new Array(values.length).fill(1);
+  }
+  
+  // Sort values in ascending order along with their weights
+  const combined = values.map((val, i) => ({value: val, weight: weights[i]}))
+    .sort((a, b) => a.value - b.value);
+  
+  const n = combined.length;
+  let numerator = 0;
+  let denominator = 0;
+  
+  for (let i = 0; i < n; i++) {
+    numerator += (2 * (i + 1) - n - 1) * combined[i].value * combined[i].weight;
+    denominator += combined[i].value * combined[i].weight;
+  }
+  
+  return denominator === 0 ? 0 : Math.abs(numerator) / (n * denominator);
+}
+
+// Test the function
+console.log("Unequal: ", calculateGini([0, 0, 0, 1]));
+console.log("Equal:   ", calculateGini([1, 1, 1, 1]));
+
+# %% [markdown]
+# While economic inequalities are sources of problems in a society, unequal music can create less predictable forms.
+#
+# - *Angles*: or offsets a moderate Gini index might indicate a well-balanced rhythmic structure, neither too monotonous (very low Gini) nor too erratic (very high Gini).
+# - *Pitches*: a lower Gini index could suggest thematic unity or motif repetition, whereas a higher value indicates more changes in pitches.
+# - *Durations*: less diversity might indicate rhythmic coherence, enhancing well-formedness.
+#
+# We can compute a Gini index for each polyloop layer, and for all of them, on angles, pitches and durations.
+
+# %% [javascript]
+// Analyze the Gini coefficients for each layer in pl1
+const layerAnalysis = pl1.getVisualizationState().layers.map(layer => {
+  const activePoints = layer.points.filter(p => p.active);
+  const pitches = activePoints.map(p => p.pitch).filter(p => p !== undefined);
+  const angles = activePoints.map(p => p.angle);
+  
+  return {
+    layer: layer.label,
+    pitchGini: calculateGini(pitches),
+    angleGini: calculateGini(angles),
+    activePoints: activePoints.length,
+    totalPoints: layer.points.length
+  };
+});
+
+console.log('Layer Analysis:');
+layerAnalysis.forEach(analysis => {
+  console.log(`${analysis.layer}:`);
+  console.log(`  Pitch Gini: ${analysis.pitchGini.toFixed(3)}`);
+  console.log(`  Angle Gini: ${analysis.angleGini.toFixed(3)}`);
+  console.log(`  Active points: ${analysis.activePoints}/${analysis.totalPoints}`);
+});
+
+# %% [markdown]
+# The Gini analysis provides insights into the diversity and distribution patterns within our polyloops. Higher Gini values indicate more inequality in the distribution, which can create more interesting and less predictable musical patterns.
+
+# %% [markdown]
+# ### Balance
+#
+# Analyzing the balance within loops offers insights into the structural and aesthetic qualities of a piece, revealing how composers craft complex yet coherent musical landscapes. A balance index would quantify how symmetrically distributed the angles or pitches are across a rhythmic cycle. A polyloop exhibits perfect balance if the weighted average of the positions equals half the total angular space (180 degrees), which can be interpreted as the centre of mass of the rhythm being centrally located.
+#
+# - *Rhythmic balance* pertains to the symmetrical distribution of angles across a cycle. A rhythm exhibits perfect balance when its "centre of mass" — the weighted average position of all beats — aligns with the midpoint of its cycle (180 degrees).
+# - *Pitch balance* involves the distribution of musical pitches throughout a composition. Pitch balance considers how high and low pitches are distributed, contributing to the overall harmonic structure's equilibrium.
+
+# %% [javascript]
+// Calculate balance metrics for the polyloop layers
+function calculateBalance(angles, weights = null) {
+  if (angles.length === 0) return 0;
+  
+  if (!weights) {
+    weights = new Array(angles.length).fill(1);
+  }
+  
+  // Convert angles to radians for proper circular mean calculation
+  const radians = angles.map(a => a * Math.PI / 180);
+  
+  // Calculate circular mean
+  let sumSin = 0, sumCos = 0, sumWeights = 0;
+  for (let i = 0; i < radians.length; i++) {
+    sumSin += Math.sin(radians[i]) * weights[i];
+    sumCos += Math.cos(radians[i]) * weights[i];
+    sumWeights += weights[i];
+  }
+  
+  const meanAngle = Math.atan2(sumSin / sumWeights, sumCos / sumWeights);
+  const meanAngleDegrees = meanAngle * 180 / Math.PI;
+  
+  // Calculate balance as distance from 180 degrees (perfect balance point)
+  const balance = 1 - Math.abs(meanAngleDegrees) / 180;
+  return Math.max(0, balance);
+}
+
+// Analyze balance for each layer
+const balanceAnalysis = pl1.getVisualizationState().layers.map(layer => {
+  const activePoints = layer.points.filter(p => p.active);
+  const angles = activePoints.map(p => p.angle);
+  const pitches = activePoints.map(p => p.pitch).filter(p => p !== undefined);
+  
+  return {
+    layer: layer.label,
+    rhythmicBalance: calculateBalance(angles),
+    pitchRange: pitches.length > 0 ? Math.max(...pitches) - Math.min(...pitches) : 0,
+    averagePitch: pitches.length > 0 ? pitches.reduce((a, b) => a + b, 0) / pitches.length : 0
+  };
+});
+
+console.log('Balance Analysis:');
+balanceAnalysis.forEach(analysis => {
+  console.log(`${analysis.layer}:`);
+  console.log(`  Rhythmic Balance: ${analysis.rhythmicBalance.toFixed(3)}`);  
+  console.log(`  Pitch Range: ${analysis.pitchRange}`);
+  console.log(`  Average Pitch: ${analysis.averagePitch.toFixed(1)}`);
+});
+
+# %% [markdown]
+# When designing polyloops, lower levels (the first layers) are typically characterized by lower pitches, with darker (warmer) timbres and more regular patterns. Going to higher layers, pitches become higher, timbres become brighter, and beats become less well-formed and more complex.
+#
+# The analysis tools are not made to reach perfect equality and balance. They are made to help you understand and reach a desired approximation for various musical indices. As a composer, you may desire to have imbalance and inequality for wilder, more unpredictable music, but seek balance and equality for more stable, predictable sections.
+
+# %% [markdown]
+# <div class="main-container">
+#     <div class="nav-container">
+#         <a href="#" class="nav-link">← previous</a>
+#         <div class="title">Djalgo's User Guide</div>
+#         <a href="#" class="nav-link">next →</a>
+#     </div>
+#     <div class="toc-container">
+#         <ul>
+#             <li><a href="#">01. Getting Started</a></li>
+#             <li><a href="#">02. Harmonies</a></li>
+#             <li><a href="#" class="active">> 03. Loops</a></li>
+#             <li><a href="#">04. Minimalism</a></li>
+#             <li><a href="#">05. Walks</a></li>
+#             <li><a href="#">06. Fractals</a></li>
+#             <li><a href="#">07. Genetic algorithms</a></li>
+#         </ul>
+#     </div>
+#     <div class="copyright-container">© Essi Parent 2024</div>
+# </div>
+
+# %% [html]
+<style>
+    .main-container {
+        background-color: #fff;
+        overflow: hidden;
+        width: 100%;
+        margin: 0 auto;
+    }
+    .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+    }
+    .copyright-container {
+        font-size: 12px;
+        display: flex;
+        justify-content: flex-end;
+        text-align: right;
+        padding: 15px 20px;
+    }
+    .nav-link {
+        text-decoration: none;
+        color: #333;
+        font-weight: bold;
+    }
+    .title {
+        font-size: 18px;
+        font-weight: bold;
+        text-align: center;
+        flex-grow: 1;
+        margin: 0 20px;
+    }
+    .toc-container {
+        padding: 15px 20px;
+        border-top: 1px solid #ccc;
+    }
+    .toc-container ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    .toc-container li {
+        margin-bottom: 8px;
+    }
+    .toc-container a {
+        text-decoration: none;
+        color: #555;
+    }
+    .toc-container a:hover {
+        text-decoration: underline;
+    }
+    .toc-container a.active {
+        color: #333;
+        font-weight: bold;
+    }
+</style>
