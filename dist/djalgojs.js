@@ -4386,7 +4386,7 @@ var core = /*#__PURE__*/Object.freeze({
 });
 
 // Complete djalgojs bundle with both algorithms and visualization
-// Export all core functionality as dj
+// Re-export all core functionality
 const dj = core;
 // Export visualization as viz (expects global Plotly)
 const viz = {
@@ -4455,4 +4455,4 @@ const viz = {
     }
 };
 
-export { dj, viz };
+export { AdvancedRhythm, CellularAutomata, GaussianProcessRegressor, GeneticAlgorithm, GeneticRhythm, JMonConverter, KernelGenerator, LogisticMap, Mandelbrot, MinimalismProcess, MotifBank, MusicTheoryConstants, MusicUtils, MusicalAnalysis, Ornament, Periodic, Polyloop, Progression, RBF, RandomWalk, RationalQuadratic, Rhythm, Scale, Tintinnabuli, Voice, dj, viz };

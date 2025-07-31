@@ -1,5 +1,8 @@
 // Complete djalgojs bundle with both algorithms and visualization
 
+// Re-export all core functionality
+export * from './index-no-viz';
+
 // Export all core functionality as dj
 import * as core from './index-no-viz';
 export const dj = core;
