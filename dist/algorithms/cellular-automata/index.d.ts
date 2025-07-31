@@ -1,0 +1,1 @@
+export { CellularAutomata } from './CellularAutomata';
