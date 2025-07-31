@@ -9,7 +9,7 @@ const external = [];
 const globals = {};
 
 export default [
-  // Complete bundle with dj + viz
+  // Main bundle with dj + viz (ES module format)
   {
     input: 'src/index-complete.ts',
     output: {
@@ -29,6 +29,29 @@ export default [
         declaration: false,
         declarationMap: false
       })
+    ]
+  },
+  // Minified version for production use
+  {
+    input: 'src/index-complete.ts',
+    output: {
+      file: 'dist/djalgojs.min.js',
+      format: 'es',
+      sourcemap: false,
+      inlineDynamicImports: true
+    },
+    plugins: [
+      resolve({ 
+        browser: true,
+        preferBuiltins: false
+      }),
+      commonjs(),
+      typescript({
+        tsconfig: './tsconfig.json',
+        declaration: false,
+        declarationMap: false
+      }),
+      terser()
     ]
   }
 ];

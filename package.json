@@ -3,38 +3,11 @@
   "version": "1.0.0",
   "description": "Algorithms and utilities for djalgojs.",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "browser": "dist/djalgojs.umd.js",
-  "unpkg": "dist/djalgojs.esm.min.js",
-  "jsdelivr": "dist/djalgojs.esm.min.js",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./algorithms": {
-      "import": "./dist/algorithms/index.js",
-      "types": "./dist/algorithms/index.d.ts"
-    },
-    "./music": {
-      "import": "./dist/music/index.js",
-      "types": "./dist/music/index.d.ts"
-    },
-    "./visualization": {
-      "import": "./dist/visualization/index.js",
-      "types": "./dist/visualization/index.d.ts"
-    },
-    "./analysis": {
-      "import": "./dist/analysis/index.js",
-      "types": "./dist/analysis/index.d.ts"
-    },
-    "./utils": {
-      "import": "./dist/utils/music.js",
-      "types": "./dist/utils/music.d.ts"
-    }
-  },
+  "main": "dist/djalgojs.js",
+  "module": "dist/djalgojs.js",
+  "browser": "dist/djalgojs.js",
+  "unpkg": "dist/djalgojs.min.js",
+  "jsdelivr": "dist/djalgojs.min.js",
   "files": [
     "dist"
   ],
@@ -59,7 +32,6 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@types/plotly.js": "^3.0.3",
-    "plotly.js": "^3.0.3"
+    "@types/plotly.js": "^3.0.3"
   }
 }

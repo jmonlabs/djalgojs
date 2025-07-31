@@ -4388,16 +4388,20 @@ var core = /*#__PURE__*/Object.freeze({
 // Complete djalgojs bundle with both algorithms and visualization
 // Re-export all core functionality
 const dj = core;
+// Helper function to get Plotly instance
+const getPlotly = () => {
+    const Plotly = globalThis.Plotly || window?.Plotly;
+    if (typeof Plotly === 'undefined') {
+        throw new Error('Plotly.js must be loaded globally before using visualization functions');
+    }
+    return Plotly;
+};
 // Export visualization as viz (expects global Plotly)
 const viz = {
     scatter(x, y, element, title = 'Scatter Plot') {
-        const Plotly = globalThis.Plotly || window?.Plotly;
-        if (typeof Plotly === 'undefined') {
-            throw new Error('Plotly.js must be loaded globally before using visualization functions');
-        }
+        const Plotly = getPlotly();
         const data = [{
-                x: x,
-                y: y,
+                x, y,
                 mode: 'markers',
                 type: 'scatter'
             }];
@@ -4409,13 +4413,9 @@ const viz = {
         return Plotly.newPlot(element, data, layout);
     },
     line(x, y, element, title = 'Line Plot') {
-        const Plotly = globalThis.Plotly || window?.Plotly;
-        if (typeof Plotly === 'undefined') {
-            throw new Error('Plotly.js must be loaded globally before using visualization functions');
-        }
+        const Plotly = getPlotly();
         const data = [{
-                x: x,
-                y: y,
+                x, y,
                 mode: 'lines',
                 type: 'scatter'
             }];
@@ -4427,10 +4427,7 @@ const viz = {
         return Plotly.newPlot(element, data, layout);
     },
     polyloop(layers, element, title = 'Polyloop') {
-        const Plotly = globalThis.Plotly || window?.Plotly;
-        if (typeof Plotly === 'undefined') {
-            throw new Error('Plotly.js must be loaded globally before using visualization functions');
-        }
+        const Plotly = getPlotly();
         const traces = layers.map((layer, i) => ({
             r: layer.values || layer.durations || [1],
             theta: layer.angles || layer.positions || [0],
