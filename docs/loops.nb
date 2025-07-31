@@ -1,0 +1,197 @@
+# %% [markdown]
+# # 3. Loops
+# 
+# Let's delve into a technique centred around numbers, but essentially visual, steering clear of mathematical functions. Multilevel rhythms in music and mathematics are about orchestrating beats, durations, and accents across various tiers or facets of a composition or sequence. These rhythmic patterns often manifest as polygons nestled within a circle, symbolizing the loop's periodic nature. I've coined the term polyloops for these looping polygons (poly) to capture the essence of looping multiple shapes. Imagine a radar plot, as depicted in the next figure, that emits a beep each time a rotating line intersects a point on the circle's perimeter. This setup allows us to: (1) introduce any number of points, (2) layer multiple polygons, each associated with a distinct instrument, (3) create triggered notes with tailored pitches and durations, and (4) adjust the rotation's velocity to our liking.
+# 
+# <center>
+# <svg class="lucide lucide-rotate-cw" width="240" height="240" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" version="1.1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+#  <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" stroke-width=".75591"/>
+#  <path d="m21 5v3h-3" stroke-width=".75591"/>
+#  <g fill="#fff" stroke-width=".75591">
+#   <path d="m7.8041 8.0197 5.0662-2.5582 5.317 8.6276-5.8688 4.4643-6.5209-6.4707z"/>
+#   <circle cx="12.656" cy="5.7148" r="1.5858"/>
+#   <circle cx="17.563" cy="14.033" r="1.5858"/>
+#   <circle cx="11.998" cy="18.281" r="1.5858"/>
+#   <circle cx="6.1337" cy="12.178" r="1.5858"/>
+#   <circle cx="7.9888" cy="7.3903" r="1.5858"/>
+#  </g>
+#  <circle cx="11.992" cy="12.008" r="1.5858" fill="#000" stroke="none"/>
+#  <path d="m20.462 10.003-8.274 1.9316" stroke-width=".75591"/>
+# </svg>
+# </center>
+
+# %% [markdown]
+# In djalgojs, we represent each polyloop as a layer of notes, where each note is defined by its pitch, duration, and position (offset) within the loop. A first polyloop might cover the basic rhythmic pattern of a loop. A second, as another layer of rhythms, and a third that leans towards the melodic side. The latter polyloop could incorporate varying pitches, adding a melodic layer to our rhythmic foundation. By carefully selecting the timing, we can craft a composition that not only has rhythmic interest but also melodic movement.
+
+# %% [markdown]
+# The concept of pulses is fundamental to understanding the structuring of rhythms within a measure. These pulses act like the ticks of a metronome, providing a temporal grid to which musical events can be aligned. In the context of our polyloops, each pulse represents a potential moment for a note to be triggered, with a granularity of 0.25 beats. This granularity divides a measure, or period, of 4 beats into 16 discrete pulses, offering a precise framework for rhythm creation.
+# 
+# Given that each position within a polyloop corresponds to a specific pulse and all such numbers are constrained to be less than the measure length, we have a clear and structured approach to rhythm design. This method ensures that all rhythmic events occur within the confines of a single measure, looping back at the end of each cycle.
+
+# %% [esm]
+// First, import Plotly.js (required for visualization)
+import Plotly from "https://cdn.plot.ly/plotly-2.24.1.min.js";
+window.Plotly = Plotly;  // Make it available globally
+
+// Then import djalgojs
+import { dj, viz } from "https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.min.js";
+
+// Make them available globally for the demo
+globalThis.dj = dj;
+globalThis.viz = viz;
+
+# %% [javascript]
+// Define our polyloops as layers of notes
+const polyloop0 = [
+  { pitch: 48, duration: 1.0, offset: 0.0 },
+  { pitch: 50, duration: 0.5, offset: 1.0 },
+  { pitch: 60, duration: 0.5, offset: 2.0 },
+  { pitch: 52, duration: 1.0, offset: 3.0 }
+];
+
+const polyloop1 = [
+  { pitch: 67, duration: 1.0, offset: 0.0 },
+  { pitch: 69, duration: 1.0, offset: 2.5 },
+  { pitch: 62, duration: 1.0, offset: 3.5 }
+];
+
+const polyloop2 = [
+  { pitch: 72, duration: 0.25, offset: 0.0 },
+  { pitch: 79, duration: 0.25, offset: 0.5 },
+  { pitch: 81, duration: 0.25, offset: 0.75 },
+  { pitch: 74, duration: 0.5, offset: 1.0 },
+  { pitch: 60, duration: 0.25, offset: 2.0 },
+  { pitch: 79, duration: 0.25, offset: 2.25 },
+  { pitch: 84, duration: 0.5, offset: 2.5 },
+  { pitch: 72, duration: 1.0, offset: 3.0 }
+];
+
+// Create a Polyloop object with our layers
+const measureLength = 4;
+
+// Display the polyloops
+polyloop2
+
+# %% [javascript]
+// Convert our polyloops to a format suitable for visualization
+const layers = [
+  {
+    values: polyloop0.map(note => note.duration),
+    angles: polyloop0.map(note => (note.offset / measureLength) * 360)
+  },
+  {
+    values: polyloop1.map(note => note.duration),
+    angles: polyloop1.map(note => (note.offset / measureLength) * 360)
+  },
+  {
+    values: polyloop2.map(note => note.duration),
+    angles: polyloop2.map(note => (note.offset / measureLength) * 360)
+  }
+];
+
+// Create a container for our visualization
+const container = document.createElement('div');
+container.id = 'polyloop-viz';
+container.style.width = '600px';
+container.style.height = '500px';
+element.appendChild(container);
+
+// Visualize the polyloops
+viz.polyloop(layers, 'polyloop-viz', 'Multi-layer Polyloop');
+
+# %% [markdown]
+# ## Creating Polyloops
+# 
+# In the visualization above, we can see how the three polyloops interact with each other. Each point on the polar plot represents a note, with:
+# 
+# - The angle representing the position (offset) within the measure
+# - The distance from the center representing the duration of the note
+# 
+# This visual representation helps us understand how the different layers of rhythm interact and overlap, creating complex patterns from simple components.
+
+# %% [javascript]
+// Let's analyze the rhythmic structure of our polyloops
+function analyzePolyloop(polyloop, measureLength) {
+  // Calculate total duration
+  const totalDuration = polyloop.reduce((sum, note) => sum + note.duration, 0);
+  
+  // Find the density (notes per beat)
+  const density = polyloop.length / measureLength;
+  
+  // Find the average note duration
+  const avgDuration = totalDuration / polyloop.length;
+  
+  // Find the positions of notes (as fractions of the measure)
+  const positions = polyloop.map(note => note.offset / measureLength);
+  
+  return {
+    noteCount: polyloop.length,
+    totalDuration,
+    density,
+    avgDuration,
+    positions
+  };
+}
+
+// Analyze each polyloop
+const analysis0 = analyzePolyloop(polyloop0, measureLength);
+const analysis1 = analyzePolyloop(polyloop1, measureLength);
+const analysis2 = analyzePolyloop(polyloop2, measureLength);
+
+// Display the analysis
+[analysis0, analysis1, analysis2]
+
+# %% [markdown]
+# ## Musical Applications
+# 
+# Polyloops can be used to create interesting rhythmic patterns for different instruments in a composition. For example:
+# 
+# - **Polyloop 0** could be used for a bass line, with its steady, longer notes
+# - **Polyloop 1** could be used for chords or pad sounds, with notes that overlap with the bass
+# - **Polyloop 2** could be used for a melodic line or arpeggio, with its shorter, more frequent notes
+# 
+# By adjusting the positions and durations of notes in each polyloop, we can create a wide variety of rhythmic patterns and interactions.
+
+# %% [javascript]
+// Let's create a new polyloop with a different rhythmic structure
+const polyloop3 = [];
+const subdivisions = 16; // 16th notes in a 4-beat measure
+
+// Create a pattern with notes on every third 16th note
+for (let i = 0; i < subdivisions; i += 3) {
+  const offset = i / subdivisions * measureLength;
+  const duration = 0.25; // 16th note duration
+  
+  polyloop3.push({
+    pitch: 60 + (i % 12), // Simple chromatic pattern
+    duration: duration,
+    offset: offset
+  });
+}
+
+// Display the new polyloop
+polyloop3
+
+# %% [javascript]
+// Visualize the new polyloop alongside the original ones
+const allLayers = [...layers, {
+  values: polyloop3.map(note => note.duration),
+  angles: polyloop3.map(note => (note.offset / measureLength) * 360)
+}];
+
+// Create a new container
+const container2 = document.createElement('div');
+container2.id = 'polyloop-viz-2';
+container2.style.width = '600px';
+container2.style.height = '500px';
+element.appendChild(container2);
+
+// Visualize all polyloops
+viz.polyloop(allLayers, 'polyloop-viz-2', 'Four-layer Polyloop');
+
+# %% [markdown]
+# ## Conclusion
+# 
+# Polyloops provide a powerful way to visualize and create complex rhythmic patterns. By layering multiple polyloops, each with its own rhythmic structure, we can create rich, interesting compositions that have both rhythmic complexity and melodic interest.
+# 
+# In the next section, we'll explore how to use these polyloops in conjunction with other musical concepts to create complete compositions.

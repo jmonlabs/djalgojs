@@ -1,0 +1,182 @@
+# %% [markdown]
+# # 1. Introduction to djalgojs
+# 
+# djalgojs is a JavaScript library for algorithmic music composition and visualization. It provides tools for working with musical concepts like scales, chords, and rhythms, as well as algorithms for generating and manipulating musical patterns.
+# 
+# In this user guide, we'll explore the various features of djalgojs and how they can be used to create interesting musical compositions.
+
+# %% [esm]
+// First, import Plotly.js (required for visualization)
+import Plotly from "https://cdn.plot.ly/plotly-2.24.1.min.js";
+window.Plotly = Plotly;  // Make it available globally
+
+// Then import djalgojs
+import { dj, viz } from "https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.min.js";
+
+// Make them available globally for the demo
+globalThis.dj = dj;
+globalThis.viz = viz;
+
+# %% [javascript]
+// Let's explore what's available in the dj object
+Object.keys(dj)
+
+# %% [markdown]
+# ## Core Concepts
+# 
+# djalgojs is built around several core concepts:
+# 
+# 1. **Music Theory**: Classes for working with scales, chords, and other music theory concepts.
+# 2. **Rhythm**: Tools for creating and manipulating rhythmic patterns.
+# 3. **Algorithms**: Various algorithms for generating and transforming musical patterns.
+# 4. **Visualization**: Tools for visualizing musical concepts and patterns.
+# 
+# Let's start by exploring some basic music theory concepts.
+
+# %% [javascript]
+// Create a C major scale
+const scale = new dj.Scale('C', 'major');
+
+// Generate the scale notes
+const notes = scale.generate(4, 8); // Generate 8 notes starting from octave 4
+
+// Display the notes
+notes
+
+# %% [javascript]
+// Create a simple visualization
+const x = Array.from({length: notes.length}, (_, i) => i);
+const y = notes;
+
+// Create a container for our visualization
+const container = document.createElement('div');
+container.id = 'intro-viz';
+container.style.width = '600px';
+container.style.height = '400px';
+element.appendChild(container);
+
+// Use viz to create a plot
+viz.line(x, y, 'intro-viz', 'C Major Scale');
+
+# %% [markdown]
+# ## Working with Rhythms
+# 
+# djalgojs provides tools for working with rhythms, including the `Rhythm` class for creating basic rhythmic patterns.
+
+# %% [javascript]
+// Create a basic rhythm pattern
+const rhythm = new dj.Rhythm(4); // 4 beats per measure
+
+// Generate a random rhythm
+const randomRhythm = rhythm.random({ complexity: 0.7 });
+
+// Display the rhythm
+randomRhythm
+
+# %% [javascript]
+// Visualize the rhythm
+const rhythmX = Array.from({length: randomRhythm.durations.length}, (_, i) => i);
+const rhythmY = randomRhythm.durations;
+
+// Create a container for our visualization
+const rhythmContainer = document.createElement('div');
+rhythmContainer.id = 'rhythm-viz';
+rhythmContainer.style.width = '600px';
+rhythmContainer.style.height = '400px';
+element.appendChild(rhythmContainer);
+
+// Create a bar chart
+const rhythmData = [{
+  x: rhythmX,
+  y: rhythmY,
+  type: 'bar',
+  marker: {
+    color: randomRhythm.accents ? 
+      randomRhythm.accents.map(accent => accent ? 'rgba(255, 0, 0, 0.7)' : 'rgba(0, 0, 255, 0.7)') : 
+      'rgba(0, 0, 255, 0.7)'
+  }
+}];
+
+const rhythmLayout = {
+  title: 'Random Rhythm Pattern',
+  xaxis: {
+    title: 'Beat Index'
+  },
+  yaxis: {
+    title: 'Duration'
+  }
+};
+
+Plotly.newPlot('rhythm-viz', rhythmData, rhythmLayout);
+
+# %% [markdown]
+# ## Algorithmic Composition
+# 
+# djalgojs includes various algorithms for generating and transforming musical patterns. Let's explore the `LogisticMap` class, which uses the logistic map equation to generate chaotic sequences that can be mapped to musical parameters.
+
+# %% [javascript]
+// Create a logistic map
+const logisticMap = new dj.LogisticMap({ r: 3.9, iterations: 100 });
+
+// Generate a sequence
+const sequence = logisticMap.generate();
+
+// Display the first 20 values
+sequence.slice(0, 20)
+
+# %% [javascript]
+// Map the sequence to pitches in the C major scale
+const scaleDegrees = scale.getScaleDegrees(4);
+const mappedPitches = sequence.map(value => {
+  const index = Math.floor(value * scaleDegrees.length);
+  return scaleDegrees[index % scaleDegrees.length];
+});
+
+// Display the mapped pitches
+mappedPitches.slice(0, 20)
+
+# %% [javascript]
+// Visualize the logistic map sequence
+const seqX = Array.from({length: sequence.length}, (_, i) => i);
+const seqY = sequence;
+
+// Create a container for our visualization
+const seqContainer = document.createElement('div');
+seqContainer.id = 'seq-viz';
+seqContainer.style.width = '600px';
+seqContainer.style.height = '400px';
+element.appendChild(seqContainer);
+
+// Create a line plot
+const seqData = [{
+  x: seqX,
+  y: seqY,
+  mode: 'lines',
+  type: 'scatter',
+  line: {
+    color: 'rgba(0, 128, 0, 0.7)'
+  }
+}];
+
+const seqLayout = {
+  title: 'Logistic Map Sequence',
+  xaxis: {
+    title: 'Iteration'
+  },
+  yaxis: {
+    title: 'Value'
+  }
+};
+
+Plotly.newPlot('seq-viz', seqData, seqLayout);
+
+# %% [markdown]
+# ## Conclusion
+# 
+# In this introduction, we've explored some of the basic features of djalgojs, including:
+# 
+# - Working with scales and music theory concepts
+# - Creating and visualizing rhythmic patterns
+# - Using algorithms to generate musical sequences
+# 
+# In the following sections, we'll dive deeper into each of these areas and explore more advanced features of the library.

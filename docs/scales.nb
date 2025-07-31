@@ -1,0 +1,281 @@
+# %% [markdown]
+# # 2. Scales and Music Theory
+# 
+# Music theory provides a framework for understanding how music works. At its core are scales, which are sequences of notes arranged in ascending or descending order. In this section, we'll explore how to work with scales in djalgojs and how they can be used to create melodies and harmonies.
+
+# %% [esm]
+// First, import Plotly.js (required for visualization)
+import Plotly from "https://cdn.plot.ly/plotly-2.24.1.min.js";
+window.Plotly = Plotly;  // Make it available globally
+
+// Then import djalgojs
+import { dj, viz } from "https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.min.js";
+
+// Make them available globally for the demo
+globalThis.dj = dj;
+globalThis.viz = viz;
+
+# %% [javascript]
+// Create a C major scale
+const cMajorScale = new dj.Scale('C', 'major');
+
+// Generate the scale notes in the 4th octave
+const notes = cMajorScale.generate(4, 8);
+
+// Display the scale
+notes
+
+# %% [javascript]
+// Get the note names in the scale
+const noteNames = cMajorScale.getNoteNames();
+
+// Display the note names
+noteNames
+
+# %% [markdown]
+# ## Scale Modes
+# 
+# In music theory, a mode is a type of scale with a specific pattern of intervals. The most common modes are derived from the major scale, starting from different degrees of the scale. For example, the Dorian mode starts from the second degree of the major scale.
+# 
+# djalgojs supports the following modes:
+# 
+# - major (Ionian)
+# - minor (Aeolian)
+# - dorian
+# - phrygian
+# - lydian
+# - mixolydian
+# - locrian
+
+# %% [javascript]
+// Create scales for different modes
+const scales = [
+  new dj.Scale('C', 'major'),
+  new dj.Scale('C', 'minor'),
+  new dj.Scale('C', 'dorian'),
+  new dj.Scale('C', 'phrygian'),
+  new dj.Scale('C', 'lydian'),
+  new dj.Scale('C', 'mixolydian'),
+  new dj.Scale('C', 'locrian')
+];
+
+// Get the note names for each scale
+const modeNoteNames = scales.map(scale => ({
+  mode: scale.mode,
+  notes: scale.getNoteNames()
+}));
+
+// Display the note names for each mode
+modeNoteNames
+
+# %% [javascript]
+// Create a visualization of the C major scale
+const x = noteNames;
+const y = notes.map(note => note % 12); // Normalize to one octave for visualization
+
+// Create a container for our visualization
+const container = document.createElement('div');
+container.id = 'scale-viz';
+container.style.width = '600px';
+container.style.height = '400px';
+element.appendChild(container);
+
+// Create a scatter plot
+const data = [{
+  x: x,
+  y: y,
+  mode: 'markers+lines',
+  type: 'scatter',
+  marker: {
+    size: 10,
+    color: 'steelblue'
+  }
+}];
+
+const layout = {
+  title: 'C Major Scale',
+  xaxis: {
+    title: 'Note'
+  },
+  yaxis: {
+    title: 'Pitch Class',
+    range: [0, 12]
+  }
+};
+
+Plotly.newPlot('scale-viz', data, layout);
+
+# %% [markdown]
+# ## Chord Progressions
+# 
+# Chord progressions are sequences of chords that form the harmonic foundation of a piece of music. In djalgojs, we can create chord progressions based on a scale using the `Progression` class.
+
+# %% [javascript]
+// Create a progression based on the C major scale
+const progression = new dj.Progression('C', 'major');
+
+// Generate a chord progression
+const chordProgression = progression.generate({ length: 4, voicing: 'triad' });
+
+// Display the progression
+chordProgression
+
+# %% [javascript]
+// Let's create a function to convert our chord progression to a sequence of notes
+function chordProgressionToNotes(progression, measureLength = 4) {
+  const notes = [];
+  let offset = 0;
+  
+  progression.chords.forEach(chord => {
+    // Parse the chord to get the root note and quality
+    const match = chord.match(/([A-G][#b]?)([^0-9]*)/);
+    if (!match) return;
+    
+    const [_, root, quality] = match;
+    
+    // Define the intervals for different chord qualities
+    const intervals = {
+      '': [0, 4, 7],      // major
+      'm': [0, 3, 7],     // minor
+      'dim': [0, 3, 6],   // diminished
+      'aug': [0, 4, 8],   // augmented
+      '7': [0, 4, 7, 10], // dominant 7th
+      'maj7': [0, 4, 7, 11], // major 7th
+      'm7': [0, 3, 7, 10]  // minor 7th
+    };
+    
+    // Get the intervals for this chord quality
+    const chordIntervals = intervals[quality] || intervals[''];
+    
+    // Convert the root note to a MIDI number (middle C = 60)
+    const rootNote = dj.MusicUtils.noteNameToMidi(root + '4');
+    
+    // Create a note for each interval in the chord
+    chordIntervals.forEach(interval => {
+      notes.push({
+        pitch: rootNote + interval,
+        duration: measureLength / progression.chords.length,
+        offset: offset
+      });
+    });
+    
+    // Move to the next chord
+    offset += measureLength / progression.chords.length;
+  });
+  
+  return notes;
+}
+
+// Convert our chord progression to notes
+const progressionNotes = chordProgressionToNotes(chordProgression);
+
+// Display the notes
+progressionNotes
+
+# %% [markdown]
+# ## Melodies from Scales
+# 
+# We can use scales to create melodies by selecting notes from the scale and arranging them in a sequence. Let's create a simple melody based on the C major scale.
+
+# %% [javascript]
+// Create a melody using notes from the C major scale
+function createMelody(scale, length = 8, octave = 4) {
+  const notes = [];
+  let offset = 0;
+  
+  // Get the scale degrees
+  const scaleDegrees = scale.getScaleDegrees(octave);
+  
+  // Create a sequence of notes
+  for (let i = 0; i < length; i++) {
+    // Choose a random scale degree
+    const degreeIndex = Math.floor(Math.random() * scaleDegrees.length);
+    const pitch = scaleDegrees[degreeIndex];
+    
+    // Choose a random duration (eighth, quarter, or half note)
+    const durations = [0.5, 1, 2];
+    const durationIndex = Math.floor(Math.random() * durations.length);
+    const duration = durations[durationIndex];
+    
+    // Add the note to our melody
+    notes.push({
+      pitch: pitch,
+      duration: duration,
+      offset: offset
+    });
+    
+    // Move to the next note
+    offset += duration;
+  }
+  
+  return notes;
+}
+
+// Create a melody based on the C major scale
+const melody = createMelody(cMajorScale, 8, 4);
+
+// Display the melody
+melody
+
+# %% [javascript]
+// Visualize the melody
+const melodyX = melody.map((note, i) => i);
+const melodyY = melody.map(note => note.pitch);
+
+// Create a container for our visualization
+const melodyContainer = document.createElement('div');
+melodyContainer.id = 'melody-viz';
+melodyContainer.style.width = '600px';
+melodyContainer.style.height = '400px';
+element.appendChild(melodyContainer);
+
+// Create a scatter plot
+const melodyData = [{
+  x: melodyX,
+  y: melodyY,
+  mode: 'markers+lines',
+  type: 'scatter',
+  marker: {
+    size: 10,
+    color: melody.map(note => note.duration) // Color based on duration
+  }
+}];
+
+const melodyLayout = {
+  title: 'Melody from C Major Scale',
+  xaxis: {
+    title: 'Note Index'
+  },
+  yaxis: {
+    title: 'Pitch'
+  }
+};
+
+Plotly.newPlot('melody-viz', melodyData, melodyLayout);
+
+# %% [markdown]
+# ## Combining Melody and Harmony
+# 
+# Now that we have a melody and a chord progression, we can combine them to create a simple piece of music. The melody will be played over the chord progression, creating a complete musical idea.
+
+# %% [javascript]
+// Combine the melody and chord progression
+const combinedNotes = [...progressionNotes, ...melody];
+
+// Sort the notes by offset
+combinedNotes.sort((a, b) => a.offset - b.offset);
+
+// Display the combined notes
+combinedNotes
+
+# %% [markdown]
+# ## Conclusion
+# 
+# In this section, we've explored how to work with scales and chord progressions in djalgojs. We've seen how to:
+# 
+# - Create scales in different modes
+# - Generate chord progressions based on scales
+# - Create melodies using notes from scales
+# - Combine melodies and chord progressions to create complete musical ideas
+# 
+# In the next section, we'll explore how to use polyloops to create complex rhythmic patterns.

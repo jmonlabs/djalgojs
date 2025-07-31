@@ -1,0 +1,459 @@
+# %% [markdown]
+# # 4. Algorithmic Composition
+# 
+# Algorithmic composition involves using algorithms to create musical patterns and structures. djalgojs provides several algorithms for generating and transforming musical material, including:
+# 
+# - Logistic Map
+# - Cellular Automata
+# - Mandelbrot Set
+# - Random Walk
+# - Genetic Algorithms
+# 
+# In this section, we'll explore these algorithms and how they can be used for musical composition.
+
+# %% [esm]
+// First, import Plotly.js (required for visualization)
+import Plotly from "https://cdn.plot.ly/plotly-2.24.1.min.js";
+window.Plotly = Plotly;  // Make it available globally
+
+// Then import djalgojs
+import { dj, viz } from "https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.min.js";
+
+// Make them available globally for the demo
+globalThis.dj = dj;
+globalThis.viz = viz;
+
+# %% [markdown]
+# ## Logistic Map
+# 
+# The logistic map is a simple mathematical function that can exhibit complex, chaotic behavior. It's defined by the equation:
+# 
+# x_{n+1} = r * x_n * (1 - x_n)
+# 
+# where r is a parameter that controls the behavior of the system. For certain values of r, the system can produce chaotic sequences that are useful for algorithmic composition.
+
+# %% [javascript]
+// Create a logistic map with r = 3.9 (chaotic regime)
+const logisticMap = new dj.LogisticMap({ 
+  r: 3.9,           // Parameter controlling behavior
+  x0: 0.5,          // Initial value
+  iterations: 100,  // Number of iterations
+  skipTransient: 20 // Skip initial transient behavior
+});
+
+// Generate a sequence
+const sequence = logisticMap.generate();
+
+// Display the first 20 values
+sequence.slice(0, 20)
+
+# %% [javascript]
+// Visualize the logistic map sequence
+const seqX = Array.from({length: sequence.length}, (_, i) => i);
+const seqY = sequence;
+
+// Create a container for our visualization
+const seqContainer = document.createElement('div');
+seqContainer.id = 'logistic-viz';
+seqContainer.style.width = '600px';
+seqContainer.style.height = '400px';
+element.appendChild(seqContainer);
+
+// Create a line plot
+const seqData = [{
+  x: seqX,
+  y: seqY,
+  mode: 'lines',
+  type: 'scatter',
+  line: {
+    color: 'rgba(0, 128, 0, 0.7)'
+  }
+}];
+
+const seqLayout = {
+  title: 'Logistic Map Sequence (r = 3.9)',
+  xaxis: {
+    title: 'Iteration'
+  },
+  yaxis: {
+    title: 'Value'
+  }
+};
+
+Plotly.newPlot('logistic-viz', seqData, seqLayout);
+
+# %% [javascript]
+// Let's explore different regimes of the logistic map
+const rValues = [2.9, 3.2, 3.5, 3.57, 3.9];
+const regimeNames = ['Fixed Point', 'Period-2', 'Period-4', 'Edge of Chaos', 'Chaos'];
+
+// Generate sequences for each r value
+const regimeSequences = rValues.map(r => {
+  const map = new dj.LogisticMap({ r, x0: 0.5, iterations: 50, skipTransient: 20 });
+  return map.generate();
+});
+
+// Create a container for our visualization
+const regimeContainer = document.createElement('div');
+regimeContainer.id = 'regime-viz';
+regimeContainer.style.width = '600px';
+regimeContainer.style.height = '600px';
+element.appendChild(regimeContainer);
+
+// Create a subplot for each regime
+const regimeData = regimeSequences.map((seq, i) => ({
+  x: Array.from({length: seq.length}, (_, j) => j),
+  y: seq,
+  mode: 'lines',
+  type: 'scatter',
+  name: `r = ${rValues[i]} (${regimeNames[i]})`,
+  line: {
+    color: `hsl(${i * 360 / rValues.length}, 70%, 50%)`
+  }
+}));
+
+const regimeLayout = {
+  title: 'Logistic Map Regimes',
+  grid: {rows: rValues.length, columns: 1, pattern: 'independent'},
+  height: 600,
+  showlegend: true
+};
+
+Plotly.newPlot('regime-viz', regimeData, regimeLayout);
+
+# %% [markdown]
+# ## Mapping to Music
+# 
+# Now that we have generated sequences using the logistic map, we can map these values to musical parameters such as pitch, duration, and velocity.
+
+# %% [javascript]
+// Create a C major scale
+const scale = new dj.Scale('C', 'major');
+
+// Map the logistic map sequence to pitches in the scale
+function mapToScale(sequence, scale, octaveRange = 2) {
+  return sequence.map(value => {
+    // Map the value (0-1) to a scale degree and octave
+    const scaleDegrees = scale.getNoteNames().length;
+    const totalDegrees = scaleDegrees * octaveRange;
+    const index = Math.floor(value * totalDegrees);
+    
+    const octave = Math.floor(index / scaleDegrees) + 4; // Start from octave 4
+    const degree = index % scaleDegrees;
+    
+    // Get the MIDI pitch
+    return scale.getDegree(degree + 1, octave);
+  });
+}
+
+// Map the sequence to pitches
+const pitches = mapToScale(sequence, scale, 2);
+
+// Map the sequence to durations (0.25 to 1.0)
+const durations = sequence.map(value => 0.25 + value * 0.75);
+
+// Create a sequence of notes
+const notes = sequence.map((value, i) => ({
+  pitch: pitches[i],
+  duration: durations[i],
+  offset: i > 0 ? durations.slice(0, i).reduce((sum, d) => sum + d, 0) : 0,
+  velocity: 0.5 + value * 0.5 // Map to velocity (0.5 to 1.0)
+}));
+
+// Display the first 10 notes
+notes.slice(0, 10)
+
+# %% [javascript]
+// Visualize the generated melody
+const noteX = notes.map(note => note.offset);
+const noteY = notes.map(note => note.pitch);
+
+// Create a container for our visualization
+const noteContainer = document.createElement('div');
+noteContainer.id = 'note-viz';
+noteContainer.style.width = '600px';
+noteContainer.style.height = '400px';
+element.appendChild(noteContainer);
+
+// Create a scatter plot
+const noteData = [{
+  x: noteX,
+  y: noteY,
+  mode: 'markers',
+  type: 'scatter',
+  marker: {
+    size: notes.map(note => note.duration * 10), // Size based on duration
+    color: notes.map(note => note.velocity),     // Color based on velocity
+    colorscale: 'Viridis'
+  }
+}];
+
+const noteLayout = {
+  title: 'Melody Generated from Logistic Map',
+  xaxis: {
+    title: 'Time (offset)'
+  },
+  yaxis: {
+    title: 'Pitch (MIDI)'
+  }
+};
+
+Plotly.newPlot('note-viz', noteData, noteLayout);
+
+# %% [markdown]
+# ## Cellular Automata
+# 
+# Cellular automata are discrete models consisting of a grid of cells, each in one of a finite number of states. The state of each cell evolves over time according to a set of rules based on the states of neighboring cells. djalgojs includes a `CellularAutomata` class for working with 1D cellular automata.
+
+# %% [javascript]
+// Create a cellular automaton with rule 30
+const ca = new dj.CellularAutomata({
+  rule: 30,           // Rule number (0-255)
+  size: 50,           // Width of the grid
+  iterations: 50,     // Number of iterations
+  initialState: 'center' // Initial state ('random', 'center', or an array)
+});
+
+// Generate the automaton
+const caStates = ca.generate();
+
+// Display the first 10 rows
+caStates.slice(0, 10)
+
+# %% [javascript]
+// Visualize the cellular automaton
+const caContainer = document.createElement('div');
+caContainer.id = 'ca-viz';
+caContainer.style.width = '600px';
+caContainer.style.height = '600px';
+element.appendChild(caContainer);
+
+// Create a heatmap
+const caData = [{
+  z: caStates,
+  type: 'heatmap',
+  colorscale: [
+    [0, 'white'],
+    [1, 'black']
+  ]
+}];
+
+const caLayout = {
+  title: 'Cellular Automaton (Rule 30)',
+  xaxis: {
+    title: 'Cell Position'
+  },
+  yaxis: {
+    title: 'Iteration',
+    autorange: 'reversed' // To match the traditional CA display
+  }
+};
+
+Plotly.newPlot('ca-viz', caData, caLayout);
+
+# %% [javascript]
+// Extract a melody from the cellular automaton
+function caToMelody(caStates, scale) {
+  // Extract a diagonal pattern from the CA
+  const diagonal = caStates.map((row, i) => row[Math.floor(row.length / 2) + i - Math.floor(caStates.length / 2)]);
+  
+  // Map to pitches in the scale
+  const scaleDegrees = scale.getScaleDegrees(4); // Get scale degrees in octave 4
+  const pitches = diagonal.map(cell => {
+    return cell === 1 ? 
+      scaleDegrees[Math.floor(Math.random() * scaleDegrees.length)] : // Active cell -> random scale note
+      null; // Inactive cell -> rest
+  });
+  
+  // Create a sequence of notes
+  const notes = [];
+  let offset = 0;
+  
+  for (let i = 0; i < pitches.length; i++) {
+    const pitch = pitches[i];
+    const duration = 0.25; // 16th note
+    
+    if (pitch !== null) {
+      notes.push({
+        pitch: pitch,
+        duration: duration,
+        offset: offset,
+        velocity: 0.8
+      });
+    }
+    
+    offset += duration;
+  }
+  
+  return notes;
+}
+
+// Generate a melody from the CA
+const caMelody = caToMelody(caStates, scale);
+
+// Display the melody
+caMelody.slice(0, 10)
+
+# %% [markdown]
+# ## Mandelbrot Set
+# 
+# The Mandelbrot set is a famous fractal that can be used to generate interesting sequences for algorithmic composition. djalgojs includes a `Mandelbrot` class for working with the Mandelbrot set.
+
+# %% [javascript]
+// Create a Mandelbrot set generator
+const mandelbrot = new dj.Mandelbrot({
+  width: 50,          // Width of the grid
+  height: 50,         // Height of the grid
+  maxIterations: 50,  // Maximum number of iterations
+  xMin: -2.5,         // Minimum x value
+  xMax: 1.5,          // Maximum x value
+  yMin: -2,           // Minimum y value
+  yMax: 2             // Maximum y value
+});
+
+// Generate the Mandelbrot set
+const mandelbrotSet = mandelbrot.generate();
+
+// Extract a sequence from the Mandelbrot set
+const mandelbrotSequence = mandelbrot.extractSequence('diagonal');
+
+// Display the first 20 values
+mandelbrotSequence.slice(0, 20)
+
+# %% [javascript]
+// Visualize the Mandelbrot set
+const mandelbrotContainer = document.createElement('div');
+mandelbrotContainer.id = 'mandelbrot-viz';
+mandelbrotContainer.style.width = '600px';
+mandelbrotContainer.style.height = '600px';
+element.appendChild(mandelbrotContainer);
+
+// Create a heatmap
+const mandelbrotData = [{
+  z: mandelbrotSet,
+  type: 'heatmap',
+  colorscale: 'Jet'
+}];
+
+const mandelbrotLayout = {
+  title: 'Mandelbrot Set',
+  xaxis: {
+    title: 'Real'
+  },
+  yaxis: {
+    title: 'Imaginary'
+  }
+};
+
+Plotly.newPlot('mandelbrot-viz', mandelbrotData, mandelbrotLayout);
+
+# %% [javascript]
+// Map the Mandelbrot sequence to a scale
+const mandelbrotPitches = mandelbrot.mapToScale(mandelbrotSequence, scale.getScaleDegrees(4));
+
+// Map to durations
+const mandelbrotDurations = mandelbrot.mapToRhythm(mandelbrotSequence, [0.25, 0.5, 1]);
+
+// Create a sequence of notes
+const mandelbrotNotes = mandelbrotSequence.map((value, i) => ({
+  pitch: mandelbrotPitches[i],
+  duration: mandelbrotDurations[i],
+  offset: i > 0 ? mandelbrotDurations.slice(0, i).reduce((sum, d) => sum + d, 0) : 0,
+  velocity: 0.8
+}));
+
+// Display the first 10 notes
+mandelbrotNotes.slice(0, 10)
+
+# %% [markdown]
+# ## Random Walk
+# 
+# A random walk is a mathematical process that describes a path consisting of a succession of random steps. djalgojs includes a `RandomWalk` class for generating random walks that can be used for algorithmic composition.
+
+# %% [javascript]
+// Create a random walk
+const randomWalk = new dj.RandomWalk({
+  dimensions: 1,      // Number of dimensions
+  stepSize: 0.1,      // Size of each step
+  bounds: [0, 1],     // Bounds for the walk
+  initialPosition: 0.5 // Starting position
+});
+
+// Generate a random walk
+randomWalk.step(100); // Take 100 steps
+
+// Get the history of the walk
+const walkHistory = randomWalk.getHistory();
+
+// Display the first 20 steps
+walkHistory.slice(0, 20)
+
+# %% [javascript]
+// Visualize the random walk
+const walkX = Array.from({length: walkHistory.length}, (_, i) => i);
+const walkY = walkHistory;
+
+// Create a container for our visualization
+const walkContainer = document.createElement('div');
+walkContainer.id = 'walk-viz';
+walkContainer.style.width = '600px';
+walkContainer.style.height = '400px';
+element.appendChild(walkContainer);
+
+// Create a line plot
+const walkData = [{
+  x: walkX,
+  y: walkY,
+  mode: 'lines',
+  type: 'scatter',
+  line: {
+    color: 'rgba(128, 0, 128, 0.7)'
+  }
+}];
+
+const walkLayout = {
+  title: 'Random Walk',
+  xaxis: {
+    title: 'Step'
+  },
+  yaxis: {
+    title: 'Position'
+  }
+};
+
+Plotly.newPlot('walk-viz', walkData, walkLayout);
+
+# %% [javascript]
+// Map the random walk to a scale
+const walkPitches = randomWalk.mapToScale(0, scale.getScaleDegrees(4), 2);
+
+// Map to durations
+const walkDurations = randomWalk.mapToRhythm(0, [0.25, 0.5, 1, 2]);
+
+// Map to velocities
+const walkVelocities = randomWalk.mapToVelocity(0, 0.5, 1.0);
+
+// Create a sequence of notes
+const walkNotes = walkHistory.map((value, i) => ({
+  pitch: walkPitches[i],
+  duration: walkDurations[i],
+  offset: i > 0 ? walkDurations.slice(0, i).reduce((sum, d) => sum + d, 0) : 0,
+  velocity: walkVelocities[i]
+}));
+
+// Display the first 10 notes
+walkNotes.slice(0, 10)
+
+# %% [markdown]
+# ## Conclusion
+# 
+# In this section, we've explored several algorithms for algorithmic composition in djalgojs:
+# 
+# - Logistic Map: A simple mathematical function that can exhibit complex, chaotic behavior
+# - Cellular Automata: Discrete models consisting of a grid of cells that evolve according to simple rules
+# - Mandelbrot Set: A famous fractal that can generate interesting sequences
+# - Random Walk: A mathematical process that describes a path of random steps
+# 
+# Each of these algorithms can be used to generate sequences that can be mapped to musical parameters such as pitch, duration, and velocity, creating interesting and complex musical patterns.
+# 
+# In the next section, we'll explore how to combine these algorithms with the other features of djalgojs to create complete musical compositions.

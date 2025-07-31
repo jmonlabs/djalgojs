@@ -1,0 +1,82 @@
+# %% [markdown]
+# # djalgojs User Guide
+# 
+# Welcome to the djalgojs User Guide! This guide will help you get started with djalgojs, a JavaScript library for algorithmic music composition and visualization.
+# 
+# ## Table of Contents
+# 
+# 1. [Introduction to djalgojs](./introduction.nb)
+# 2. [Scales and Music Theory](./scales.nb)
+# 3. [Loops](./loops.nb)
+# 4. [Algorithmic Composition](./algorithms.nb)
+# 5. [Conclusion and Next Steps](./conclusion.nb)
+# 
+# ## Getting Started
+# 
+# To use djalgojs in your project, you need to include both Plotly.js (for visualization) and djalgojs:
+
+# %% [esm]
+// First, import Plotly.js (required for visualization)
+import Plotly from "https://cdn.plot.ly/plotly-2.24.1.min.js";
+window.Plotly = Plotly;  // Make it available globally
+
+// Then import djalgojs
+import { dj, viz } from "https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.min.js";
+
+// Make them available globally for the demo
+globalThis.dj = dj;
+globalThis.viz = viz;
+
+# %% [javascript]
+// Let's check what's available in the dj object
+Object.keys(dj)
+
+# %% [markdown]
+# ## About djalgojs
+# 
+# djalgojs is a JavaScript library for algorithmic music composition and visualization. It provides tools for working with musical concepts like scales, chords, and rhythms, as well as algorithms for generating and manipulating musical patterns.
+# 
+# The library is designed to be used in web browsers, making it ideal for interactive music applications, educational tools, and creative coding projects.
+# 
+# ## Key Features
+# 
+# - **Music Theory**: Classes for working with scales, chords, and other music theory concepts
+# - **Rhythm**: Tools for creating and manipulating rhythmic patterns
+# - **Algorithms**: Various algorithms for generating and transforming musical patterns
+# - **Visualization**: Tools for visualizing musical concepts and patterns
+# 
+# ## Quick Example
+# 
+# Here's a simple example of using djalgojs to create a C major scale and visualize it:
+
+# %% [javascript]
+// Create a C major scale
+const scale = new dj.Scale('C', 'major');
+
+// Generate the scale notes
+const notes = scale.generate(4, 8); // Generate 8 notes starting from octave 4
+
+// Display the notes
+notes
+
+# %% [javascript]
+// Create a simple visualization
+const x = Array.from({length: notes.length}, (_, i) => i);
+const y = notes;
+
+// Create a container for our visualization
+const container = document.createElement('div');
+container.id = 'intro-viz';
+container.style.width = '600px';
+container.style.height = '400px';
+element.appendChild(container);
+
+// Use viz to create a plot
+viz.line(x, y, 'intro-viz', 'C Major Scale');
+
+# %% [markdown]
+# ## Next Steps
+# 
+# To learn more about djalgojs, check out the sections in the Table of Contents above. Each section covers a different aspect of the library, with examples and explanations to help you understand how to use it.
+# 
+# Happy composing!
