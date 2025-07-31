@@ -1,0 +1,62 @@
+{
+  "metadata": {
+    "name": "1. Getting started<br>",
+    "language_info": {
+      "name": "JavaScipt",
+      "version": "8.0"
+    }
+  },
+  "jsnbversion": "v0.1",
+  "cells": [
+    {
+      "code": "# 1. Getting started\ndjalgojs is a JavaScript API allowing to compose music with math. It is the successor of the [djalgo Python library](https://gitlab.com/essicolo/djalgo), and a core part of the [jmon ecosystem](https://github.com/jmonlabs).\n\n# 1.1 Scribbler notebook set up\nThere are multiple ways of using djalgojs: here, we cover a basic setup without worrying about installations. To use djalgojs in the browser, you can head to [app.scribbler.live](https://app.scribbler.live/), then import djalgojs from the CDN and use it as you intend, maybe following the tutorials with copy and paste. Although djalgojs can be used in [Observable notebooks](https://observablehq.com/@essi/djalgojs), I prefered the less known Starboard because it's great, fully open source and compliant with vanilla JavaScript. With Starboard, code runs directly in your browser without needing a server or fancy, discouraging installations. Since browser sessions might not persist when you close the tab, take care to save your notebooks or copy-paste your code to recover your work later on. To start with djalgojs, import the library and begin creating music. The alias `dj` will be used throughout the documentation for the core library, and `viz` for visualization functions.",
+      "status": "",
+      "output": "<h1>1. Getting started</h1>\n<p>djalgojs is a JavaScript API allowing to compose music with math. It is the successor of the <a href=\"https://gitlab.com/essicolo/djalgo\">djalgo Python library</a>, and a core part of the <a href=\"https://github.com/jmonlabs\">jmon ecosystem</a>.</p>\n<h1>1.1 Scribbler notebook set up</h1>\n<p>There are multiple ways of using djalgojs: here, we cover a basic setup without worrying about installations. To use djalgojs in the browser, you can head to <a href=\"https://app.scribbler.live/\">app.scribbler.live</a>, then import djalgojs from the CDN and use it as you intend, maybe following the tutorials with copy and paste. Although djalgojs can be used in <a href=\"https://observablehq.com/@essi/djalgojs\">Observable notebooks</a>, I prefered the less known Starboard because it's great, fully open source and compliant with vanilla JavaScript. With Starboard, code runs directly in your browser without needing a server or fancy, discouraging installations. Since browser sessions might not persist when you close the tab, take care to save your notebooks or copy-paste your code to recover your work later on. To start with djalgojs, import the library and begin creating music. The alias <code>dj</code> will be used throughout the documentation for the core library, and <code>viz</code> for visualization functions.</p>\n",
+      "type": "html"
+    },
+    {
+      "code": "//> module\nimport {dj, viz} from \"https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js?v=1\";\n\n// Create a promise that resolves when library is ready\nglobalThis.djReady = new Promise((resolve) => {\n    setTimeout(() => {\n        globalThis.dj = dj;\n        globalThis.viz = viz;\n        resolve({dj, viz});\n    }, 1000);\n});\n\nawait djReady;",
+      "status": "[12]<br><span style=\"font-size:8px\">3ms<span></span></span>",
+      "output": " <br>",
+      "type": "code"
+    },
+    {
+      "code": "JavaScript cells being isolated one another, `globalThis` allows reuse variables elsewhere in the notebook.\n\ndjalgojs is designed to generate musical pieces using JavaScript objects in the specially designed *jmon format*. This format is inspired by Tone.js's input format, including the musical notes and their synthesis. Although you totally can edit synthesis, djalgojs is all about musical notes, not the sound. The format of a mucical piece in djalgojs includes the piece, the tracks of the piece, the notes of the tracks, and three values describing a note: the pitch, the duration, and the time stamp. A simple jmon piece would generate an object like the following.",
+      "status": "",
+      "output": "<p>JavaScript cells being isolated one another, <code>globalThis</code> allows reuse variables elsewhere in the notebook.</p>\n<p>djalgojs is designed to generate musical pieces using JavaScript objects in the specially designed <em>jmon format</em>. This format is inspired by Tone.js's input format, including the musical notes and their synthesis. Although you totally can edit synthesis, djalgojs is all about musical notes, not the sound. The format of a mucical piece in djalgojs includes the piece, the tracks of the piece, the notes of the tracks, and three values describing a note: the pitch, the duration, and the time stamp. A simple jmon piece would generate an object like the following.</p>\n",
+      "type": "html"
+    },
+    {
+      "code": "const note = { \"pitch\": 60, \"duration\": 1.0, \"time\": 0.0 };\n\nconst track = {\n    \"melody\": [\n      note,\n      { \"pitch\": 60, \"duration\": 1.0, \"time\": 1.0 },\n      { \"pitch\": 67, \"duration\": 1.0, \"time\": 2.0 },\n      { \"pitch\": 67, \"duration\": 1.0, \"time\": 3.0 },\n      { \"pitch\": 69, \"duration\": 1.0, \"time\": 4.0 },\n      { \"pitch\": 69, \"duration\": 1.0, \"time\": 5.0 },\n      { \"pitch\": 67, \"duration\": 2.0, \"time\": 6.0 },\n      { \"pitch\": 65, \"duration\": 1.0, \"time\": 8.0 },\n      { \"pitch\": 65, \"duration\": 1.0, \"time\": 9.0 },\n      { \"pitch\": 64, \"duration\": 1.0, \"time\": 10.0 },\n      { \"pitch\": 64, \"duration\": 1.0, \"time\": 11.0 },\n      { \"pitch\": 62, \"duration\": 1.0, \"time\": 12.0 },\n      { \"pitch\": 62, \"duration\": 1.0, \"time\": 13.0 },\n      { \"pitch\": 60, \"duration\": 2.0, \"time\": 14.0 }\n    ]\n  }\n\nconst piece = {\n  \"title\": \"Twinkle, Twinkle, Little Star\",\n  \"tracks\": track \n};",
+      "status": "[16]<br><span style=\"font-size:8px\">5ms<span></span></span>",
+      "output": "",
+      "type": "code"
+    },
+    {
+      "code": "Such objects can be converted to MIDI and WAV thanks the jmon ecosystem's player.\n\nPLAYER...",
+      "status": "",
+      "output": "<p>Such objects can be converted to MIDI and WAV thanks the jmon ecosystem's player.</p>\n<p>PLAYER...</p>\n",
+      "type": "html"
+    },
+    {
+      "code": "djalgojs offers a range of functionalities designed for music composers and enthusiasts. Here's a snapshot of what djalgojs brings to the table:\n#\n- **Polyloops**: Create complex rhythmic and melodic patterns using circular loop visualizations and multi-layered polyrhythmic structures.\n- **Analysis**: Discover a suite of indices for analyzing musical tracks—whether it's pitches, durations, or timing. These metrics serve not just for analysis, but also as benchmarks for algorithmic composition.\n- **Fractals**: Delve into the beauty of mathematics, extracting music from the intricate patterns of cellular automata, Mandelbrot fractals, and logistic maps.\n- **Genetic Algorithms**: Evolve your music algorithmically, steering compositions towards specific analytical targets and aesthetic goals.\n- **Harmony**: Tools to enrich compositions with scales, chord progressions, and harmonic structures based on music theory.\n- **Minimalism**: Explore minimalist techniques including additive and subtractive processes, inspired by composers like Steve Reich and Arvo Pärt.\n- **Random Walks**: Let music wander through algorithmic paths, guided by various mathematical walking patterns and Gaussian processes.\n- **Gaussian Processes**: Use machine learning techniques for intelligent melody generation and musical prediction.\n- **Rhythm**: Advanced rhythmic pattern generation including Euclidean rhythms and complex polyrhythmic structures.\n- **Visualization**: Real-time plotting and animation capabilities for musical analysis and composition feedback.\n- **Export**: Convert compositions to JMON format for use in professional digital audio workstations and music software.\n\nLet's explore some basic djalgojs functionality",
+      "status": "",
+      "output": "<p>djalgojs offers a range of functionalities designed for music composers and enthusiasts. Here's a snapshot of what djalgojs brings to the table:</p>\n<h1></h1>\n<ul>\n<li><strong>Polyloops</strong>: Create complex rhythmic and melodic patterns using circular loop visualizations and multi-layered polyrhythmic structures.</li>\n<li><strong>Analysis</strong>: Discover a suite of indices for analyzing musical tracks—whether it's pitches, durations, or timing. These metrics serve not just for analysis, but also as benchmarks for algorithmic composition.</li>\n<li><strong>Fractals</strong>: Delve into the beauty of mathematics, extracting music from the intricate patterns of cellular automata, Mandelbrot fractals, and logistic maps.</li>\n<li><strong>Genetic Algorithms</strong>: Evolve your music algorithmically, steering compositions towards specific analytical targets and aesthetic goals.</li>\n<li><strong>Harmony</strong>: Tools to enrich compositions with scales, chord progressions, and harmonic structures based on music theory.</li>\n<li><strong>Minimalism</strong>: Explore minimalist techniques including additive and subtractive processes, inspired by composers like Steve Reich and Arvo Pärt.</li>\n<li><strong>Random Walks</strong>: Let music wander through algorithmic paths, guided by various mathematical walking patterns and Gaussian processes.</li>\n<li><strong>Gaussian Processes</strong>: Use machine learning techniques for intelligent melody generation and musical prediction.</li>\n<li><strong>Rhythm</strong>: Advanced rhythmic pattern generation including Euclidean rhythms and complex polyrhythmic structures.</li>\n<li><strong>Visualization</strong>: Real-time plotting and animation capabilities for musical analysis and composition feedback.</li>\n<li><strong>Export</strong>: Convert compositions to JMON format for use in professional digital audio workstations and music software.</li>\n</ul>\n<p>Let's explore some basic djalgojs functionality</p>\n",
+      "type": "html"
+    },
+    {
+      "code": "// Create a simple scale using the Scale class\nconst scale = new dj.Scale('C', 'major');\nconst scalePitches = scale.generate(4, 8); // 4 pitches starting from octave 8 // BUG\nscalePitches;",
+      "status": "[19]<br><span style=\"font-size:8px\">2ms<span></span></span>",
+      "output": "[\n  60,\n  62,\n  64,\n  65,\n  67,\n  69,\n  71,\n  72\n] <br>",
+      "type": "code"
+    },
+    {
+      "code": "// Create a simple rhythm pattern\nconst rhythm = new dj.Rhythm(4.0); // 4/4 time\nconst randomRhythm = rhythm.random({ complexity: 0.5 });\nrandomRhythm; // How to pass from NOTE to RHYTHM",
+      "status": "[20]<br><span style=\"font-size:8px\">2ms<span></span></span>",
+      "output": "{\n  \"durations\": [\n    2,\n    0.25,\n    0.25,\n    1.5\n  ],\n  \"measureLength\": 4,\n  \"accents\": [\n    true,\n    false,\n    false,\n    false\n  ]\n} <br>",
+      "type": "code"
+    }
+  ],
+  "source": "https://github.com/gopi-suvanam/scribbler",
+  "run_on_load": false
+}
