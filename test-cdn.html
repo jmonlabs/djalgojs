@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>djalgojs CDN Test</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div id="plot"></div>
+    <div id="output"></div>
+    
+    <script src="./dist/djalgojs.umd.js"></script>
+    
+    <script>
+        // Test the CDN import
+        console.log('dj object:', dj);
+        
+        // Test a simple function
+        const output = document.getElementById('output');
+        output.innerHTML = '<h3>djalgojs CDN Test Results:</h3>';
+        
+        try {
+            // Test Polyloop creation
+            const polyloop = new dj.Polyloop([3, 5, 7]);
+            output.innerHTML += '<p>✅ Polyloop created successfully</p>';
+            
+            // Test Genetic Algorithm
+            const ga = new dj.GeneticAlgorithm({
+                populationSize: 10,
+                mutationRate: 0.1
+            });
+            output.innerHTML += '<p>✅ GeneticAlgorithm created successfully</p>';
+            
+            // Test MusicUtils
+            const notes = dj.MusicUtils.generateScale('C', 'major', 4);
+            output.innerHTML += `<p>✅ Generated C major scale: ${JSON.stringify(notes.slice(0, 3))}...</p>`;
+            
+            // Test visualization if possible
+            if (typeof Plotly !== 'undefined') {
+                output.innerHTML += '<p>✅ Plotly.js is available for visualizations</p>';
+            }
+            
+            output.innerHTML += '<p><strong>🎉 All tests passed! CDN import working correctly.</strong></p>';
+            
+        } catch (error) {
+            output.innerHTML += `<p>❌ Error: ${error.message}</p>`;
+            console.error('Test error:', error);
+        }
+    </script>
+</body>
+</html>

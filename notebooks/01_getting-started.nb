@@ -1,0 +1,220 @@
+# %% [markdown]
+# # 1. Getting Started with djalgojs
+
+There are several ways to start using djalgojs: in the browser with starboard or observable, with Node.js for better performance and autonomy, or using online JavaScript environments.
+
+## 1.1. In the browser
+
+To use djalgojs in the browser, you can use:
+- **Starboard** - Interactive JavaScript notebooks (what you're using now!)
+- **Observable** - Professional data visualization platform  
+- **CodePen/JSFiddle** - Quick prototyping environments
+
+Since browser environments may not persist your work, make sure to save or export your code regularly.
+
+# %% [markdown]
+## 1.2. With Node.js
+
+For local development, install Node.js (recommended version 16+), then create a new project:
+
+```bash
+# Create a new project
+mkdir my-music-project
+cd my-music-project
+npm init -y
+
+# Install djalgojs
+npm install djalgojs
+
+# Optional: TypeScript support
+npm install -D typescript @types/node
+```
+
+You can then use djalgojs in your JavaScript/TypeScript files:
+
+```javascript
+import { Scale, Progression, JMonConverter } from 'djalgojs';
+```
+
+# %% [markdown]
+## 1.3. Cloud Environments
+
+Platforms like **CodeSandbox**, **Replit**, or **StackBlitz** can run JavaScript code in the cloud. These are great for sharing and collaborating on musical algorithms.
+
+## 1.4. Starting a Session
+
+Let's begin by importing djalgojs. We'll use the `dj` alias throughout this guide:
+
+# %% [javascript]
+// Import the main djalgojs library
+// In a browser environment, you might need to load from a CDN
+import * as dj from 'https://cdn.skypack.dev/djalgojs';
+
+// For demonstration, let's also create our alias
+const { Scale, Progression, Rhythm, CellularAutomata, JMonConverter } = dj;
+
+console.log('djalgojs loaded successfully!');
+
+# %% [markdown]
+## Data Structures in djalgojs
+
+djalgojs represents musical data using JavaScript objects and arrays:
+
+- **A note** is an object: `{ pitch: 60, duration: 1.0, time: 0.0, velocity: 0.8 }`
+- **A sequence** is an array of notes: `{ notes: [...], tempo: 120 }`  
+- **A JMON composition** is a complete musical piece with multiple sequences, effects, and metadata
+
+```
+note = { pitch: 60, duration: 1, time: 0, velocity: 0.8 }
+
+sequence = {
+  notes: [
+    { pitch: 60, duration: 1, time: 0 },
+    { pitch: 62, duration: 1, time: 1 },
+    { pitch: 64, duration: 1, time: 2 }
+  ]
+}
+
+composition = {
+  format: 'jmonTone',
+  bpm: 120,
+  sequences: [sequence1, sequence2, ...],
+  audioGraph: [...],
+  connections: [...]
+}
+```
+
+Unlike Python tuples, JavaScript objects allow for more descriptive and extensible data structures.
+
+# %% [markdown]
+## djalgojs Features Overview
+
+djalgojs offers comprehensive tools for algorithmic music composition:
+
+- **Music Theory**: Scales, chord progressions, and harmonic analysis
+- **Algorithmic Generation**: Gaussian processes, cellular automata, genetic algorithms
+- **Rhythm Generation**: Complex polyrhythmic patterns and minimalist processes  
+- **JMON Integration**: Professional audio format with synthesis and effects
+- **Real-time Capabilities**: Browser-based audio synthesis and visualization
+- **TypeScript Support**: Full type safety for complex musical algorithms
+
+# %% [javascript]
+// Let's create our first scale
+const cMajorScale = new Scale('C', 'major');
+const scaleNotes = cMajorScale.generate(4, 8); // Octave 4, 8 notes
+
+console.log('C Major Scale MIDI notes:', scaleNotes);
+
+// Convert to note names
+const noteNames = scaleNotes.map(pitch => JMonConverter.midiToNoteName(pitch));
+console.log('C Major Scale note names:', noteNames);
+
+# %% [javascript]
+// Create a JMON sequence from the scale
+const scaleSequence = cMajorScale.toJMonSequence({
+  length: 8,
+  octave: 4,
+  duration: '4n',  // Quarter notes
+  velocity: 0.8,
+  label: 'C Major Scale'
+});
+
+console.log('JMON Scale Sequence:', scaleSequence);
+
+# %% [javascript]
+// Generate a chord progression
+const progression = new Progression('C', 'major');
+const chordSequence = progression.toJMonSequence({
+  length: 4,
+  octave: 3,
+  duration: '1n',  // Whole notes
+  voicing: 'triad',
+  label: 'C Major Progression'
+});
+
+console.log('Chord Progression:', chordSequence);
+
+# %% [javascript]
+// Create a complete JMON composition
+const composition = JMonConverter.createComposition(
+  [scaleSequence, chordSequence],
+  {
+    bpm: 120,
+    keySignature: 'C',
+    timeSignature: '4/4',
+    effects: [
+      { type: 'Reverb', options: { wet: 0.3, roomSize: 0.7 } }
+    ],
+    metadata: {
+      name: 'Getting Started Composition',
+      author: 'djalgojs Tutorial',
+      description: 'A simple scale and chord progression'
+    }
+  }
+);
+
+console.log('Complete JMON Composition:', composition);
+
+# %% [markdown]
+## Differences from Python djalgo
+
+**Key improvements in djalgojs:**
+
+1. **JMON Integration** - Native support for professional audio formats
+2. **Browser Compatibility** - Runs directly in web browsers with Web Audio API
+3. **TypeScript Support** - Full type safety and IDE integration
+4. **Modern JavaScript** - ES6+ features, async/await, modules
+5. **Real-time Audio** - Direct synthesis and playback capabilities
+6. **Interactive Notebooks** - Native support for starboard and Observable
+
+**Data Structure Comparison:**
+
+Python djalgo:
+```python
+# Tuple-based notes
+note = (60, 1.0, 0.0)  # (pitch, duration, offset)
+track = [(60, 1, 0), (62, 1, 1), (64, 1, 2)]
+piece = {'track1': track}
+```
+
+djalgojs:
+```javascript
+// Object-based notes with named properties
+const note = { pitch: 60, duration: 1.0, time: 0.0, velocity: 0.8 };
+const sequence = { 
+  notes: [note1, note2, note3],
+  label: 'My Sequence'
+};
+const composition = { sequences: [sequence], bpm: 120 };
+```
+
+# %% [markdown]
+## Next Steps
+
+You're now ready to explore:
+
+- **Harmony & Scales** - Advanced music theory applications
+- **Algorithmic Generation** - Cellular automata, genetic algorithms
+- **Real-time Audio** - Browser-based synthesis and effects
+- **JMON Export** - Professional audio production workflows
+
+The next notebook will dive deep into harmony and music theory with djalgojs!
+
+# %% [markdown]
+---
+
+## Navigation
+
+**djalgojs Tutorial Series:**
+
+1. **Getting Started** ← *You are here*
+2. [Harmony & Music Theory](02_harmony.nb)
+3. [Polyloops & Rhythmic Patterns](03_loops.nb)  
+4. [Minimalist Techniques](04_minimalism.nb)
+5. [Random Walks & Algorithms](05_walks.nb)
+6. [Fractals & Chaos](06_fractals.nb)
+7. [Genetic Algorithms](07_genetic.nb)
+8. [Machine Learning & AI](08_ai.nb)
+
+---
+*© 2024 djalgojs - TypeScript adaptation of djalgo by Essi Parent*

@@ -1,0 +1,68 @@
+{
+  "name": "djalgojs",
+  "version": "1.0.0",
+  "description": "Algorithms and utilities for djalgojs.",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "browser": "dist/djalgojs.umd.js",
+  "unpkg": "dist/djalgojs.umd.min.js",
+  "jsdelivr": "dist/djalgojs.umd.min.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./algorithms": {
+      "import": "./dist/algorithms/index.js",
+      "types": "./dist/algorithms/index.d.ts"
+    },
+    "./music": {
+      "import": "./dist/music/index.js",
+      "types": "./dist/music/index.d.ts"
+    },
+    "./visualization": {
+      "import": "./dist/visualization/index.js",
+      "types": "./dist/visualization/index.d.ts"
+    },
+    "./analysis": {
+      "import": "./dist/analysis/index.js",
+      "types": "./dist/analysis/index.d.ts"
+    },
+    "./utils": {
+      "import": "./dist/utils/music.js",
+      "types": "./dist/utils/music.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc && npm run build:fix-imports",
+    "build:fix-imports": "node scripts/fix-imports.js",
+    "build:cdn": "npm run build && rollup -c",
+    "build:all": "npm run build:cdn",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "prepublishOnly": "npm run clean && npm run build:all"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "@types/jest": "^29.0.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.0.0",
+    "rollup": "^4.46.2",
+    "rollup-plugin-dts": "^6.2.1",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@types/plotly.js": "^3.0.3",
+    "plotly.js": "^3.0.3"
+  }
+}

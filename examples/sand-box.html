@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>djalgojs - sand box</title>
+  <style>
+    #editor { width: 100%; height: 700px; }
+    #console { background: #222; color: #0f0; padding: 8px; min-height: 40px; font-family: monospace; }
+  </style>
+</head>
+<body>
+  <div style="display: flex; gap: 16px; align-items: flex-start;">
+    <div style="flex: 1;">
+      <textarea id="editor"></textarea><br>
+      <button onclick="runCode()">Run</button>
+    </div>
+    <div id="plot-area" style="flex: 1; min-width: 300px; min-height: 300px; background: #fff; border: 1px solid #ccc; padding: 8px;"></div>
+  </div>
+  <script type="module">
+    import * as dj from '../dist/djalgojs.es.js';
+    window.djalgo = dj;
+    window.runCode = function() {
+      const code = document.getElementById('editor').value;
+      const plotArea = document.getElementById('plot-area');
+      // Efface le plot précédent
+      plotArea.innerHTML = '';
+      let result;
+      try {
+        result = eval(code);
+      } catch (e) {
+        console.error(e);
+      }
+      // Si le code retourne un élément DOM, l'afficher dans plot-area
+      if (result && (result instanceof HTMLElement || result instanceof SVGElement)) {
+        plotArea.appendChild(result);
+      }
+    }
+  </script>
+</body>
+</html>
