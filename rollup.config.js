@@ -4,66 +4,24 @@ import commonjs from '@rollup/plugin-commonjs';
 import terser from '@rollup/plugin-terser';
 import dts from 'rollup-plugin-dts';
 
-const external = ['plotly.js'];
-const globals = {
-  'plotly.js': 'Plotly'
-};
+// For starboard.gg, we need a self-contained bundle without externals
+const external = [];
+const globals = {};
 
 export default [
-  // ES Module bundle (for starboard.gg and modern CDN usage)
+  // Self-contained ES Module bundle for starboard.gg (without visualization)
   {
-    input: 'src/index.ts',
+    input: 'src/index-no-viz.ts',
     output: {
-      file: 'dist/djalgojs.esm.js',
+      file: 'dist/djalgojs.standalone.js',
       format: 'es',
       sourcemap: true
     },
-    external,
     plugins: [
-      resolve({ browser: true }),
-      commonjs(),
-      typescript({
-        tsconfig: './tsconfig.json',
-        declaration: false,
-        declarationMap: false
-      })
-    ]
-  },
-  
-  // Minified ES Module bundle
-  {
-    input: 'src/index.ts',
-    output: {
-      file: 'dist/djalgojs.esm.min.js',
-      format: 'es',
-      sourcemap: true
-    },
-    external,
-    plugins: [
-      resolve({ browser: true }),
-      commonjs(),
-      typescript({
-        tsconfig: './tsconfig.json',
-        declaration: false,
-        declarationMap: false
+      resolve({ 
+        browser: true,
+        preferBuiltins: false
       }),
-      terser()
-    ]
-  },
-  
-  // UMD bundle (for script tag usage)
-  {
-    input: 'src/index.ts',
-    output: {
-      file: 'dist/djalgojs.umd.js',
-      format: 'umd',
-      name: 'dj',
-      globals,
-      sourcemap: true
-    },
-    external,
-    plugins: [
-      resolve({ browser: true }),
       commonjs(),
       typescript({
         tsconfig: './tsconfig.json',
@@ -73,19 +31,19 @@ export default [
     ]
   },
   
-  // Minified UMD bundle
+  // Minified self-contained ES Module bundle (without visualization)
   {
-    input: 'src/index.ts',
+    input: 'src/index-no-viz.ts',
     output: {
-      file: 'dist/djalgojs.umd.min.js',
-      format: 'umd',
-      name: 'dj',
-      globals,
+      file: 'dist/djalgojs.standalone.min.js',
+      format: 'es',
       sourcemap: true
     },
-    external,
     plugins: [
-      resolve({ browser: true }),
+      resolve({ 
+        browser: true,
+        preferBuiltins: false
+      }),
       commonjs(),
       typescript({
         tsconfig: './tsconfig.json',

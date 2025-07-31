@@ -416,7 +416,7 @@
          * Create Observable Plot visualization of scale pitches
          */
         plotScale(octave = 4, length = 8, options) {
-            const { PlotRenderer } = require('../../visualization/plots/PlotRenderer');
+            const { PlotRenderer } = require('../../visualization/plots/PlotRenderer.js');
             const pitches = this.generate(octave, length);
             const noteNames = this.getNoteNames();
             const data = {
@@ -436,7 +436,7 @@
          * Create Observable Plot radar chart of scale intervals
          */
         plotIntervals(options) {
-            const { PlotRenderer } = require('../../visualization/plots/PlotRenderer');
+            const { PlotRenderer } = require('../../visualization/plots/PlotRenderer.js');
             const intervals = MusicTheoryConstants.scaleIntervals[this.mode];
             const noteNames = this.getNoteNames();
             const data = {
@@ -453,7 +453,7 @@
         }
     }
 
-    // import { MusicTheoryConstants } from './MusicTheoryConstants';
+    // import { MusicTheoryConstants } from './MusicTheoryConstants.js';
     class Progression {
         constructor(tonic, mode = 'major') {
             this.scale = new Scale(tonic, mode);
@@ -2318,21 +2318,21 @@
          * Create Observable Plot visualization of CA evolution
          */
         plotEvolution(options) {
-            const { CAVisualizer } = require('../../visualization/cellular-automata/CAVisualizer');
+            const { CAVisualizer } = require('../../visualization/cellular-automata/CAVisualizer.js');
             return CAVisualizer.plotEvolution(this.getHistory(), options);
         }
         /**
          * Create Observable Plot visualization of current generation
          */
         plotGeneration(options) {
-            const { CAVisualizer } = require('../../visualization/cellular-automata/CAVisualizer');
+            const { CAVisualizer } = require('../../visualization/cellular-automata/CAVisualizer.js');
             return CAVisualizer.plotGeneration(this.getCurrentState(), options);
         }
         /**
          * Create Observable Plot density visualization
          */
         plotDensity(options) {
-            const { CAVisualizer } = require('../../visualization/cellular-automata/CAVisualizer');
+            const { CAVisualizer } = require('../../visualization/cellular-automata/CAVisualizer.js');
             return CAVisualizer.plotDensity(this.getHistory(), options);
         }
     }
@@ -2570,21 +2570,21 @@
          * Create Observable Plot visualization of the polyloop
          */
         plot(options) {
-            const { PolyloopVisualizer } = require('../../visualization/polyloops/PolyloopVisualizer');
+            const { PolyloopVisualizer } = require('../../visualization/polyloops/PolyloopVisualizer.js');
             return PolyloopVisualizer.plotPolyloop(this.config.layers, options);
         }
         /**
          * Create Observable Plot timeline visualization
          */
         plotTimeline(duration = 8, options) {
-            const { PolyloopVisualizer } = require('../../visualization/polyloops/PolyloopVisualizer');
+            const { PolyloopVisualizer } = require('../../visualization/polyloops/PolyloopVisualizer.js');
             return PolyloopVisualizer.plotTimeline(this.config.layers, duration, options);
         }
         /**
          * Create animated visualization frames
          */
         plotAnimated(numFrames = 12, options) {
-            const { PolyloopVisualizer } = require('../../visualization/polyloops/PolyloopVisualizer');
+            const { PolyloopVisualizer } = require('../../visualization/polyloops/PolyloopVisualizer.js');
             return PolyloopVisualizer.plotAnimated(this.config.layers, numFrames, options);
         }
     }
