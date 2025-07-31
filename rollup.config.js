@@ -9,11 +9,11 @@ const external = [];
 const globals = {};
 
 export default [
-  // Self-contained ES Module bundle for starboard.gg (without visualization)
+  // Main dj bundle - self-contained
   {
     input: 'src/index-no-viz.ts',
     output: {
-      file: 'dist/djalgojs.standalone.js',
+      file: 'dist/dj.js',
       format: 'es',
       sourcemap: true
     },
@@ -31,34 +31,11 @@ export default [
     ]
   },
   
-  // Minified self-contained ES Module bundle (without visualization)
-  {
-    input: 'src/index-no-viz.ts',
-    output: {
-      file: 'dist/djalgojs.standalone.min.js',
-      format: 'es',
-      sourcemap: true
-    },
-    plugins: [
-      resolve({ 
-        browser: true,
-        preferBuiltins: false
-      }),
-      commonjs(),
-      typescript({
-        tsconfig: './tsconfig.json',
-        declaration: false,
-        declarationMap: false
-      }),
-      terser()
-    ]
-  },
-  
-  // Visualization module that uses global Plotly
+  // Visualization bundle - uses global Plotly
   {
     input: 'src/visualization-plotly.ts',
     output: {
-      file: 'dist/djalgojs.viz.js',
+      file: 'dist/viz.js',
       format: 'es',
       sourcemap: true
     },

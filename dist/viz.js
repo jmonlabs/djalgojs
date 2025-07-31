@@ -77,4 +77,4 @@ class PlotlyVisualization {
 }
 
 export { PlotlyVisualization, PlotlyVisualization as Viz };
-//# sourceMappingURL=djalgojs.viz.js.map
+//# sourceMappingURL=viz.js.map

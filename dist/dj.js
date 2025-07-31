@@ -4355,4 +4355,4 @@ class MusicUtils {
 }
 
 export { AdvancedRhythm, CellularAutomata, GaussianProcessRegressor, GeneticAlgorithm, GeneticRhythm, JMonConverter, KernelGenerator, LogisticMap, Mandelbrot, MinimalismProcess, MotifBank, MusicTheoryConstants, MusicUtils, MusicalAnalysis, Ornament, Periodic, Polyloop, Progression, RBF, RandomWalk, RationalQuadratic, Rhythm, Scale, Tintinnabuli, Voice };
-//# sourceMappingURL=djalgojs.standalone.js.map
+//# sourceMappingURL=dj.js.map
