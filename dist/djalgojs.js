@@ -4354,5 +4354,41 @@ class MusicUtils {
     }
 }
 
-export { AdvancedRhythm, CellularAutomata, GaussianProcessRegressor, GeneticAlgorithm, GeneticRhythm, JMonConverter, KernelGenerator, LogisticMap, Mandelbrot, MinimalismProcess, MotifBank, MusicTheoryConstants, MusicUtils, MusicalAnalysis, Ornament, Periodic, Polyloop, Progression, RBF, RandomWalk, RationalQuadratic, Rhythm, Scale, Tintinnabuli, Voice };
-//# sourceMappingURL=dj.js.map
+// Music Theory and Harmony
+
+var algorithms = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    AdvancedRhythm: AdvancedRhythm,
+    CellularAutomata: CellularAutomata,
+    GaussianProcessRegressor: GaussianProcessRegressor,
+    GeneticAlgorithm: GeneticAlgorithm,
+    GeneticRhythm: GeneticRhythm,
+    JMonConverter: JMonConverter,
+    KernelGenerator: KernelGenerator,
+    LogisticMap: LogisticMap,
+    Mandelbrot: Mandelbrot,
+    MinimalismProcess: MinimalismProcess,
+    MotifBank: MotifBank,
+    MusicTheoryConstants: MusicTheoryConstants,
+    MusicUtils: MusicUtils,
+    MusicalAnalysis: MusicalAnalysis,
+    Ornament: Ornament,
+    Periodic: Periodic,
+    Polyloop: Polyloop,
+    Progression: Progression,
+    RBF: RBF,
+    RandomWalk: RandomWalk,
+    RationalQuadratic: RationalQuadratic,
+    Rhythm: Rhythm,
+    Scale: Scale,
+    Tintinnabuli: Tintinnabuli,
+    Voice: Voice
+});
+
+// Simple djalgojs bundle - algorithms only, no visualization dependencies
+// Re-export everything from the core algorithms
+const dj = {
+    ...algorithms
+};
+
+export { AdvancedRhythm, CellularAutomata, GaussianProcessRegressor, GeneticAlgorithm, GeneticRhythm, JMonConverter, KernelGenerator, LogisticMap, Mandelbrot, MinimalismProcess, MotifBank, MusicTheoryConstants, MusicUtils, MusicalAnalysis, Ornament, Periodic, Polyloop, Progression, RBF, RandomWalk, RationalQuadratic, Rhythm, Scale, Tintinnabuli, Voice, dj as default, dj };

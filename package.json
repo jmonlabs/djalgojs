@@ -39,14 +39,11 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && npm run build:fix-imports",
-    "build:fix-imports": "node scripts/fix-imports.js",
-    "build:cdn": "npm run build && rollup -c",
-    "build:all": "npm run build:cdn",
+    "build": "rollup -c",
     "clean": "rm -rf dist",
     "dev": "tsc --watch",
     "test": "jest",
-    "prepublishOnly": "npm run clean && npm run build:all"
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.6",

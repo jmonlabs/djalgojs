@@ -9,35 +9,14 @@ const external = [];
 const globals = {};
 
 export default [
-  // Main dj bundle - self-contained
+  // Self-contained ES module - everything inlined
   {
-    input: 'src/index-no-viz.ts',
+    input: 'src/index-simple.ts',
     output: {
-      file: 'dist/dj.js',
+      file: 'dist/djalgojs.js',
       format: 'es',
-      sourcemap: true
-    },
-    plugins: [
-      resolve({ 
-        browser: true,
-        preferBuiltins: false
-      }),
-      commonjs(),
-      typescript({
-        tsconfig: './tsconfig.json',
-        declaration: false,
-        declarationMap: false
-      })
-    ]
-  },
-  
-  // Visualization bundle - uses global Plotly
-  {
-    input: 'src/visualization-plotly.ts',
-    output: {
-      file: 'dist/viz.js',
-      format: 'es',
-      sourcemap: true
+      sourcemap: false,
+      inlineDynamicImports: true
     },
     plugins: [
       resolve({ 

@@ -1,1 +1,0 @@
-export { CellularAutomata } from './CellularAutomata.js';
