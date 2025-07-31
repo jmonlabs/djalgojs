@@ -5,8 +5,8 @@ import * as core from './index-no-viz';
 export const dj = core;
 
 // Export visualization as viz (expects global Plotly)
-export class viz {
-  static scatter(x: number[], y: number[], element: string | HTMLElement, title = 'Scatter Plot') {
+export const viz = {
+  scatter(x: number[], y: number[], element: string | HTMLElement, title = 'Scatter Plot') {
     const Plotly = (globalThis as any).Plotly || (window as any)?.Plotly;
     if (typeof Plotly === 'undefined') {
       throw new Error('Plotly.js must be loaded globally before using visualization functions');
@@ -26,9 +26,9 @@ export class viz {
     };
     
     return Plotly.newPlot(element, data, layout);
-  }
+  },
   
-  static line(x: number[], y: number[], element: string | HTMLElement, title = 'Line Plot') {
+  line(x: number[], y: number[], element: string | HTMLElement, title = 'Line Plot') {
     const Plotly = (globalThis as any).Plotly || (window as any)?.Plotly;
     if (typeof Plotly === 'undefined') {
       throw new Error('Plotly.js must be loaded globally before using visualization functions');
@@ -48,17 +48,17 @@ export class viz {
     };
     
     return Plotly.newPlot(element, data, layout);
-  }
+  },
   
-  static polyloop(layers: any[], element: string | HTMLElement, title = 'Polyloop') {
+  polyloop(layers: any[], element: string | HTMLElement, title = 'Polyloop') {
     const Plotly = (globalThis as any).Plotly || (window as any)?.Plotly;
     if (typeof Plotly === 'undefined') {
       throw new Error('Plotly.js must be loaded globally before using visualization functions');
     }
     
     const traces = layers.map((layer, i) => ({
-      r: layer.values || layer.durations,
-      theta: layer.angles || layer.positions,
+      r: layer.values || layer.durations || [1],
+      theta: layer.angles || layer.positions || [0],
       mode: 'markers',
       type: 'scatterpolar',
       name: `Layer ${i + 1}`,
@@ -80,4 +80,4 @@ export class viz {
     
     return Plotly.newPlot(element, traces, layout);
   }
-}
+};

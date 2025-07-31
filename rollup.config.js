@@ -9,9 +9,9 @@ const external = [];
 const globals = {};
 
 export default [
-  // Self-contained ES module - everything inlined
+  // Complete bundle with dj + viz
   {
-    input: 'src/index-simple.ts',
+    input: 'src/index-complete.ts',
     output: {
       file: 'dist/djalgojs.js',
       format: 'es',
