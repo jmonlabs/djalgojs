@@ -4,11 +4,10 @@
 # This section will help you get started with Djalgo and JavaScript music programming.
 
 # %% [markdown]
-# ## 2.1 JavaScript basics
-#
-# ### 2.1.1 Arrays in First Class
-#
-# Djalgo uses basic JavaScript objects such as arrays and objects. JavaScript arrays won't produce music directly, but they become powerful after processing them through Web Audio APIs or MIDI processors. The content of a JavaScript array is defined in square brackets, and each item is separated with a comma. In the next code cell, I assign an array to a variable.
+## 2.1 JavaScript basics
+### 2.1.1 Arrays in First Class
+
+Djalgo uses basic JavaScript objects such as arrays and objects. JavaScript arrays won't produce music directly, but they become powerful after processing them through Web Audio APIs or MIDI processors. The content of a JavaScript array is defined in square brackets, and each item is separated with a comma. In the next code cell, I assign an array to a variable.
 
 # %% [esm]
 import {dj, viz} from "https://cdn.jsdelivr.net/gh/jmonlabs/djalgojs@main/dist/djalgojs.js?v=1"
