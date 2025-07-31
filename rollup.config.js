@@ -52,5 +52,27 @@ export default [
       }),
       terser()
     ]
+  },
+  
+  // Visualization module that uses global Plotly
+  {
+    input: 'src/visualization-plotly.ts',
+    output: {
+      file: 'dist/djalgojs.viz.js',
+      format: 'es',
+      sourcemap: true
+    },
+    plugins: [
+      resolve({ 
+        browser: true,
+        preferBuiltins: false
+      }),
+      commonjs(),
+      typescript({
+        tsconfig: './tsconfig.json',
+        declaration: false,
+        declarationMap: false
+      })
+    ]
   }
 ];
