@@ -1,6 +1,6 @@
 # djalgojs
 
-djalgojs is a JavaScript library for algorithmic music composition and visualization designed to be the successor of the Python library djalgo.
+djalgojs is a JavaScript library for algorithmic music composition and visualization designed to be the successor of the Python library djalgo. djalgojs was mostly translated from Python to Typescript using AI.
 
 ## Installation
 
