@@ -7,17 +7,22 @@ export * from './index-no-viz';
 import * as core from './index-no-viz';
 export const dj = core;
 
+// Helper function to get Plotly instance
+const getPlotly = () => {
+  const Plotly = (globalThis as any).Plotly || (window as any)?.Plotly;
+  if (typeof Plotly === 'undefined') {
+    throw new Error('Plotly.js must be loaded globally before using visualization functions');
+  }
+  return Plotly;
+};
+
 // Export visualization as viz (expects global Plotly)
 export const viz = {
   scatter(x: number[], y: number[], element: string | HTMLElement, title = 'Scatter Plot') {
-    const Plotly = (globalThis as any).Plotly || (window as any)?.Plotly;
-    if (typeof Plotly === 'undefined') {
-      throw new Error('Plotly.js must be loaded globally before using visualization functions');
-    }
+    const Plotly = getPlotly();
     
     const data = [{
-      x: x,
-      y: y,
+      x, y,
       mode: 'markers',
       type: 'scatter'
     }];
@@ -32,14 +37,10 @@ export const viz = {
   },
   
   line(x: number[], y: number[], element: string | HTMLElement, title = 'Line Plot') {
-    const Plotly = (globalThis as any).Plotly || (window as any)?.Plotly;
-    if (typeof Plotly === 'undefined') {
-      throw new Error('Plotly.js must be loaded globally before using visualization functions');
-    }
+    const Plotly = getPlotly();
     
     const data = [{
-      x: x,
-      y: y,
+      x, y,
       mode: 'lines',
       type: 'scatter'
     }];
@@ -54,10 +55,7 @@ export const viz = {
   },
   
   polyloop(layers: any[], element: string | HTMLElement, title = 'Polyloop') {
-    const Plotly = (globalThis as any).Plotly || (window as any)?.Plotly;
-    if (typeof Plotly === 'undefined') {
-      throw new Error('Plotly.js must be loaded globally before using visualization functions');
-    }
+    const Plotly = getPlotly();
     
     const traces = layers.map((layer, i) => ({
       r: layer.values || layer.durations || [1],
